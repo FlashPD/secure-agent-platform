@@ -1,0 +1,18 @@
+UV ?= $(shell command -v uv 2>/dev/null || echo .venv/bin/uv)
+export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
+
+.PHONY: setup check doctor demo-replay
+setup:
+	$(UV) sync --locked
+
+check:
+	$(UV) run --locked ruff check .
+	$(UV) run --locked ruff format --check .
+	$(UV) run --locked mypy src
+	$(UV) run --locked pytest
+
+doctor:
+	$(UV) run --locked agentguard doctor
+
+demo-replay:
+	$(UV) run --locked agentguard demo-replay

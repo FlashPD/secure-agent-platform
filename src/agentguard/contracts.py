@@ -1,0 +1,89 @@
+"""Untrusted proposals contain arguments only; authority lives in trusted contracts."""
+
+import hashlib
+import json
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+
+Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")]
+Profile = Literal["baseline", "prompt_only", "defended"]
+Tool = Literal["documents.read", "tickets.create"]
+
+
+class Contract(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class TaskContract(Contract):
+    task_id: Identifier
+    version: int = Field(default=1, ge=1)
+    actor: Identifier
+    workspace: Identifier
+    document_ids: tuple[Identifier, ...]
+    project_ids: tuple[Identifier, ...]
+    allowed_tools: tuple[Tool, ...] = ("documents.read", "tickets.create")
+
+
+class Document(Contract):
+    id: Identifier
+    workspace: Identifier
+    body: str = Field(max_length=12000)
+    readers: tuple[Identifier, ...]
+    classification: Literal["internal", "confidential"] = "internal"
+    version: int = Field(default=1, ge=1)
+
+
+class Project(Contract):
+    id: Identifier
+    workspace: Identifier
+    writers: tuple[Identifier, ...]
+    visibility: Literal["internal", "shared"] = "internal"
+    version: int = Field(default=1, ge=1)
+
+
+class ReadArguments(Contract):
+    document_id: Identifier
+
+
+class CreateArguments(Contract):
+    project_id: Identifier
+    title: str = Field(min_length=1, max_length=160)
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class ReadAction(Contract):
+    tool: Literal["documents.read"] = "documents.read"
+    arguments: ReadArguments
+
+
+class CreateAction(Contract):
+    tool: Literal["tickets.create"] = "tickets.create"
+    arguments: CreateArguments
+
+
+Action = Annotated[ReadAction | CreateAction, Field(discriminator="tool")]
+ACTION_ADAPTER: TypeAdapter[Action] = TypeAdapter(Action)
+
+
+class Decision(Contract):
+    outcome: Literal["ALLOW", "DENY", "REQUIRE_APPROVAL"]
+    reason: str
+    action_hash: str
+    policy_version: str
+
+
+class Execution(Contract):
+    decision: Decision
+    result: dict[str, str] = Field(default_factory=dict)
+    approval_id: str | None = None
+
+
+def canonical_json(value: object) -> str:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    )
+
+
+def digest(value: object) -> str:
+    return hashlib.sha256(canonical_json(value).encode()).hexdigest()

@@ -1,0 +1,382 @@
+"""Single-node effect kernel. Policy, approval consumption, effect and audit commit together.
+
+This is a trusted library boundary, not an authenticated control plane. The model
+must only receive the Action schema; review() belongs to the future operator API.
+"""
+
+import json
+import secrets
+import sqlite3
+import time
+import uuid
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any
+
+from agentguard.contracts import (
+    Action,
+    Document,
+    Execution,
+    Profile,
+    Project,
+    ReadAction,
+    TaskContract,
+    canonical_json,
+    digest,
+)
+from agentguard.policy import evaluate
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS episodes (
+    id TEXT PRIMARY KEY,
+    contract TEXT NOT NULL,
+    profile TEXT NOT NULL CHECK(profile IN ('baseline','prompt_only','defended')),
+    confidential INTEGER NOT NULL DEFAULT 0,
+    cancelled INTEGER NOT NULL DEFAULT 0,
+    max_actions INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS resources (
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    kind TEXT NOT NULL,
+    id TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    PRIMARY KEY (episode_id, kind, id)
+);
+CREATE TABLE IF NOT EXISTS executions (
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    execution_key TEXT NOT NULL,
+    proposal_hash TEXT NOT NULL,
+    output TEXT,
+    PRIMARY KEY (episode_id, execution_key)
+);
+CREATE TABLE IF NOT EXISTS approvals (
+    id TEXT PRIMARY KEY,
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    execution_key TEXT NOT NULL,
+    action_hash TEXT NOT NULL,
+    nonce TEXT NOT NULL,
+    snapshot TEXT NOT NULL,
+    expires_at REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    reviewer TEXT,
+    consumed INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (episode_id, execution_key, action_hash)
+);
+CREATE TABLE IF NOT EXISTS tickets (
+    id TEXT PRIMARY KEY,
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    project_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS audit_events (
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    execution_key TEXT,
+    kind TEXT NOT NULL,
+    payload TEXT NOT NULL
+);
+PRAGMA user_version = 1;
+"""
+
+
+class ExecutionConflict(ValueError):
+    """An execution key was reused for a different proposal."""
+
+
+class ReviewRejected(ValueError):
+    """An operator decision no longer matches the pending request."""
+
+
+class Store:
+    def __init__(self, path: Path, clock: Callable[[], float] = time.time):
+        self.path = path
+        self.clock = clock
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with self.connection() as db:
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if version not in (0, 1):
+                raise ValueError(f"Unsupported database schema: {version}")
+            db.execute("PRAGMA journal_mode=WAL")
+            db.executescript(SCHEMA)
+
+    @contextmanager
+    def connection(self) -> Iterator[sqlite3.Connection]:
+        db = sqlite3.connect(self.path, timeout=5)
+        db.row_factory = sqlite3.Row
+        db.execute("PRAGMA foreign_keys=ON")
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
+
+    def create_episode(
+        self,
+        contract: TaskContract,
+        documents: tuple[Document, ...],
+        projects: tuple[Project, ...],
+        *,
+        experimental_profile: Profile = "defended",
+        max_actions: int = 8,
+    ) -> str:
+        if experimental_profile not in ("baseline", "prompt_only", "defended"):
+            raise ValueError("Unknown policy profile")
+        if not 1 <= max_actions <= 64:
+            raise ValueError("max_actions must be between 1 and 64")
+        episode_id = str(uuid.uuid4())
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute(
+                "INSERT INTO episodes(id,contract,profile,max_actions) VALUES (?,?,?,?)",
+                (episode_id, contract.model_dump_json(), experimental_profile, max_actions),
+            )
+            resources: tuple[Document | Project, ...] = (*documents, *projects)
+            for resource in resources:
+                if resource.workspace != contract.workspace:
+                    raise ValueError("Fixtures must belong to the episode workspace")
+                db.execute(
+                    "INSERT INTO resources VALUES (?,?,?,?)",
+                    (
+                        episode_id,
+                        "document" if isinstance(resource, Document) else "project",
+                        resource.id,
+                        resource.model_dump_json(),
+                    ),
+                )
+        return episode_id
+
+    @staticmethod
+    def _audit(
+        db: sqlite3.Connection, episode_id: str, key: str | None, kind: str, payload: object
+    ) -> None:
+        db.execute(
+            "INSERT INTO audit_events(episode_id,execution_key,kind,payload) VALUES (?,?,?,?)",
+            (episode_id, key, kind, canonical_json(payload)),
+        )
+
+    def execute(
+        self, episode_id: str, key: str, action: Action, *, approval_id: str | None = None
+    ) -> Execution:
+        """Execute fixed synthetic operations; no shell, model code, network or container.
+
+        An approval ID is supplied by the trusted caller after review, never inside
+        an untrusted Action. A committed key always returns its original result.
+        """
+        if not key or len(key) > 160:
+            raise ValueError("Invalid execution key")
+        proposal_hash = digest(action.model_dump(mode="json"))
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            episode = db.execute("SELECT * FROM episodes WHERE id=?", (episode_id,)).fetchone()
+            if episode is None:
+                raise KeyError("Unknown episode")
+            previous = db.execute(
+                "SELECT * FROM executions WHERE episode_id=? AND execution_key=?", (episode_id, key)
+            ).fetchone()
+            if previous:
+                if previous["proposal_hash"] != proposal_hash:
+                    raise ExecutionConflict("Execution key already binds a different action")
+                if previous["output"] is not None:
+                    return Execution.model_validate_json(previous["output"])
+
+            contract = TaskContract.model_validate_json(episode["contract"])
+            if isinstance(action, ReadAction):
+                kind, target = "document", action.arguments.document_id
+            else:
+                kind, target = "project", action.arguments.project_id
+            row = db.execute(
+                "SELECT payload FROM resources WHERE episode_id=? AND kind=? AND id=?",
+                (episode_id, kind, target),
+            ).fetchone()
+            resource = None
+            if row:
+                resource = (
+                    Document.model_validate_json(row["payload"])
+                    if kind == "document"
+                    else Project.model_validate_json(row["payload"])
+                )
+            decision = evaluate(
+                episode_id=episode_id,
+                contract=contract,
+                profile=episode["profile"],
+                action=action,
+                resource=resource,
+                confidential=bool(episode["confidential"]),
+            )
+            count = db.execute(
+                "SELECT count(*) FROM executions WHERE episode_id=?", (episode_id,)
+            ).fetchone()[0]
+            if episode["cancelled"] or (previous is None and count >= episode["max_actions"]):
+                reason = "CANCELLED" if episode["cancelled"] else "BUDGET_EXHAUSTED"
+                return Execution(
+                    decision=decision.model_copy(update={"outcome": "DENY", "reason": reason})
+                )
+            if previous is None:
+                db.execute(
+                    "INSERT INTO executions VALUES (?,?,?,NULL)", (episode_id, key, proposal_hash)
+                )
+
+            grant = None
+            if approval_id is not None:
+                grant = db.execute("SELECT * FROM approvals WHERE id=?", (approval_id,)).fetchone()
+                valid = (
+                    grant is not None
+                    and grant["episode_id"] == episode_id
+                    and grant["execution_key"] == key
+                    and grant["action_hash"] == decision.action_hash
+                    and grant["status"] == "APPROVED"
+                    and not grant["consumed"]
+                    and grant["expires_at"] > self.clock()
+                )
+                if not valid:
+                    decision = decision.model_copy(
+                        update={"outcome": "DENY", "reason": "APPROVAL_INVALID"}
+                    )
+
+            if decision.outcome == "REQUIRE_APPROVAL":
+                if grant is not None and approval_id is not None:
+                    decision = decision.model_copy(
+                        update={"outcome": "ALLOW", "reason": "APPROVED"}
+                    )
+                else:
+                    request = db.execute(
+                        "SELECT * FROM approvals WHERE episode_id=? "
+                        "AND execution_key=? AND action_hash=?",
+                        (episode_id, key, decision.action_hash),
+                    ).fetchone()
+                    if request is None:
+                        request_id = secrets.token_urlsafe(24)
+                        db.execute(
+                            "INSERT INTO approvals(id,episode_id,execution_key,action_hash,"
+                            "nonce,snapshot,expires_at) "
+                            "VALUES (?,?,?,?,?,?,?)",
+                            (
+                                request_id,
+                                episode_id,
+                                key,
+                                decision.action_hash,
+                                secrets.token_urlsafe(24),
+                                canonical_json(
+                                    {
+                                        "action": action.model_dump(mode="json"),
+                                        "contract": contract.model_dump(mode="json"),
+                                        "resource": resource.model_dump(mode="json")
+                                        if resource
+                                        else None,
+                                        "policy_version": decision.policy_version,
+                                        "confidential": bool(episode["confidential"]),
+                                    }
+                                ),
+                                self.clock() + 300,
+                            ),
+                        )
+                        self._audit(
+                            db, episode_id, key, "APPROVAL_REQUESTED", decision.model_dump()
+                        )
+                    else:
+                        request_id = request["id"]
+                    if request is not None and (
+                        request["status"] == "REJECTED" or request["expires_at"] <= self.clock()
+                    ):
+                        decision = decision.model_copy(
+                            update={"outcome": "DENY", "reason": "APPROVAL_CLOSED"}
+                        )
+                    else:
+                        return Execution(decision=decision, approval_id=request_id)
+
+            result: dict[str, str] = {}
+            if decision.outcome == "ALLOW":
+                if isinstance(action, ReadAction):
+                    assert isinstance(resource, Document)
+                    result = {"document_id": resource.id, "body": resource.body}
+                    if resource.classification == "confidential":
+                        db.execute("UPDATE episodes SET confidential=1 WHERE id=?", (episode_id,))
+                else:
+                    ticket_id = str(uuid.uuid4())
+                    db.execute(
+                        "INSERT INTO tickets VALUES (?,?,?,?,?)",
+                        (
+                            ticket_id,
+                            episode_id,
+                            action.arguments.project_id,
+                            action.arguments.title,
+                            action.arguments.body,
+                        ),
+                    )
+                    result = {"ticket_id": ticket_id}
+                if grant is not None:
+                    db.execute("UPDATE approvals SET consumed=1 WHERE id=?", (approval_id,))
+
+            output = Execution(decision=decision, result=result)
+            db.execute(
+                "UPDATE executions SET output=? WHERE episode_id=? AND execution_key=?",
+                (output.model_dump_json(), episode_id, key),
+            )
+            self._audit(db, episode_id, key, "EXECUTED", output.decision.model_dump())
+            return output
+
+    def approval(self, approval_id: str) -> dict[str, Any]:
+        """Operator-only detail, including one-use nonce; never expose as a model tool."""
+        with self.connection() as db:
+            row = db.execute("SELECT * FROM approvals WHERE id=?", (approval_id,)).fetchone()
+            if row is None:
+                raise KeyError("Unknown approval")
+            return {**dict(row), "snapshot": json.loads(row["snapshot"])}
+
+    def review(
+        self, approval_id: str, *, expected_hash: str, nonce: str, reviewer: str, approve: bool
+    ) -> None:
+        """Trusted operator entry point. API authentication is not implemented yet."""
+        if not reviewer.strip():
+            raise ReviewRejected("Reviewer is required")
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT * FROM approvals WHERE id=?", (approval_id,)).fetchone()
+            if (
+                row is None
+                or row["status"] != "PENDING"
+                or row["expires_at"] <= self.clock()
+                or row["action_hash"] != expected_hash
+                or not secrets.compare_digest(row["nonce"], nonce)
+            ):
+                raise ReviewRejected("Approval is stale, already reviewed, or does not match")
+            status = "APPROVED" if approve else "REJECTED"
+            db.execute(
+                "UPDATE approvals SET status=?,reviewer=? WHERE id=?",
+                (status, reviewer, approval_id),
+            )
+            self._audit(
+                db,
+                row["episode_id"],
+                row["execution_key"],
+                "REVIEWED",
+                {"status": status, "reviewer": reviewer},
+            )
+
+    def cancel(self, episode_id: str) -> None:
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            cursor = db.execute("UPDATE episodes SET cancelled=1 WHERE id=?", (episode_id,))
+            if cursor.rowcount != 1:
+                raise KeyError("Unknown episode")
+            self._audit(db, episode_id, None, "CANCELLED", {})
+
+    def tickets(self, episode_id: str) -> list[dict[str, Any]]:
+        with self.connection() as db:
+            return [
+                dict(row)
+                for row in db.execute(
+                    "SELECT * FROM tickets WHERE episode_id=? ORDER BY id", (episode_id,)
+                )
+            ]
+
+    def events(self, episode_id: str) -> list[dict[str, Any]]:
+        with self.connection() as db:
+            return [
+                {**dict(row), "payload": json.loads(row["payload"])}
+                for row in db.execute(
+                    "SELECT * FROM audit_events WHERE episode_id=? ORDER BY sequence", (episode_id,)
+                )
+            ]
