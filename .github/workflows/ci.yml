@@ -1,4 +1,4 @@
-name: contracts
+name: contracts-and-isolation
 on: [push, pull_request]
 
 permissions:
@@ -17,3 +17,6 @@ jobs:
       - run: uv sync --locked
       - run: make check
       - run: make demo-replay
+      - run: make sandbox-build
+      - run: make sandbox-smoke
+      - run: make demo-isolated

@@ -1,6 +1,6 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: first implementation increment; live model and container feasibility pending.**
+**Status: authorization kernel and isolated tool smoke working; live model feasibility pending.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -43,8 +43,27 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. Tools currently run as fixed trusted Python operations. Container
-isolation, the model adapter, API, worker leases, and UI remain to be implemented.
+success rate. The model adapter, API, worker leases, and UI remain to be implemented.
+
+## Run isolated tools
+
+Start Docker Desktop, then run:
+
+```sh
+make sandbox-build     # Explicit download/build from a digest-pinned Python image
+make sandbox-smoke     # Real containment probes; nonzero exit if a check fails
+make demo-isolated     # Same authored episodes, with both profiles using containers
+```
+
+The container uses a fixed entrypoint, unprivileged UID, no network, read-only
+root, dropped capabilities, and CPU/memory/PID limits. No host paths, credentials,
+or Docker socket are mounted. Bounded JSON travels over stdin/stdout; only the
+host can commit simulated effects. Permissions and approvals are rechecked after
+computation, outside which the database write lock is released.
+
+`make demo-replay` retains the lightweight in-process backend for local contract
+tests. Reports identify the actual backend. Neither mode performs model inference.
+See the [sandbox runbook and measured checks](docs/sandbox.md).
 
 ## Implemented boundaries
 
@@ -69,6 +88,6 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Dependency license inventory](docs/dependency-licenses.json)
 
 Next: pin a native local model and runtime, measure one real clean/attacked
-workflow, validate an isolated tool, and expand to ten development tasks. The
+workflow, and expand to ten development tasks. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

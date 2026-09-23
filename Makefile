@@ -1,7 +1,7 @@
 UV ?= $(shell command -v uv 2>/dev/null || echo .venv/bin/uv)
 export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
 
-.PHONY: setup check doctor demo-replay
+.PHONY: setup check doctor demo-replay sandbox-build sandbox-smoke demo-isolated
 setup:
 	$(UV) sync --locked
 
@@ -16,3 +16,12 @@ doctor:
 
 demo-replay:
 	$(UV) run --locked agentguard demo-replay
+
+sandbox-build:
+	$(UV) run --locked agentguard sandbox-build
+
+sandbox-smoke:
+	$(UV) run --locked agentguard sandbox-smoke
+
+demo-isolated:
+	$(UV) run --locked agentguard demo-replay --sandbox-manifest artifacts/sandbox/manifest.json

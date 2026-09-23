@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from agentguard.computation import Computer
 from agentguard.contracts import (
     ACTION_ADAPTER,
     Contract,
@@ -73,7 +74,7 @@ def grade(
     }
 
 
-def run_replay(scenario_path: Path, output_root: Path) -> Path:
+def run_replay(scenario_path: Path, output_root: Path, *, computer: Computer | None = None) -> Path:
     raw = scenario_path.read_bytes()
     scenario = Scenario.model_validate_json(raw)
     # Validate every untrusted proposal before creating any episodes.
@@ -85,7 +86,7 @@ def run_replay(scenario_path: Path, output_root: Path) -> Path:
         raise ValueError("Attack insertion point does not exist")
     run_dir = output_root / str(uuid.uuid4())
     run_dir.mkdir(parents=True, exist_ok=False)
-    store = Store(run_dir / "state.sqlite3")
+    store = Store(run_dir / "state.sqlite3", computer=computer)
     rows: list[dict[str, Any]] = []
     for profile in ("baseline", "defended"):
         selected: Profile = "baseline" if profile == "baseline" else "defended"
@@ -148,7 +149,8 @@ def run_replay(scenario_path: Path, output_root: Path) -> Path:
         "mode": "scripted_replay",
         "model": None,
         "fresh_inference": False,
-        "containment": "trusted_python_simulation_only",
+        "containment": store.computer.mode,
+        "tool_image_id": getattr(store.computer, "image_id", None),
         "scenario_sha256": hashlib.sha256(raw).hexdigest(),
         "policy_version": POLICY_VERSION,
         "code_commit": revision,
@@ -169,8 +171,8 @@ def run_replay(scenario_path: Path, output_root: Path) -> Path:
         "# Scripted replay — no model inference",
         "",
         "Authored proposals exercise the gateway and independent state grader. "
-        "These are not measured AI security or utility results. Tool computation "
-        "runs in trusted Python; container isolation is not exercised.",
+        "These are not measured AI security or utility results. "
+        f"Tool execution backend: {store.computer.mode}.",
         "",
         "| Profile | Input | Task success | Attack success |",
         "|---|---|---|---|",

@@ -16,6 +16,12 @@ Observed September 23, 2026. Only non-identifying fields are recorded.
 | PC OS / driver / runtime | Unverified; PC not needed for scripted replay |
 | Live latency / memory / model compatibility | Not measured |
 
+Follow-up on the same date: Docker Desktop was started and server version 29.7.2
+was verified. The fixed-tool container smoke passed 20 checks; isolated document
+read and ticket computation each took about 0.3 seconds in that smoke, including
+container startup/cleanup. These are two individual observations, not percentiles
+or model inference measurements. See [sandbox evidence](sandbox.md).
+
 `make doctor` emits a fresh JSON inventory. It checks project-local models in
 `artifacts/models/`, performs no downloads, and does not start services. System
 profiler output is reduced to model name, chip, and memory before reporting;

@@ -11,9 +11,20 @@ import time
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agentguard.computation import (
+    Computer,
+    DocumentResult,
+    DocumentSnapshot,
+    InProcessComputer,
+    TicketEffect,
+    ToolRequest,
+    ToolResult,
+    validate_result,
+)
 from agentguard.contracts import (
     Action,
     Document,
@@ -89,10 +100,29 @@ class ReviewRejected(ValueError):
     """An operator decision no longer matches the pending request."""
 
 
+@dataclass(frozen=True)
+class Prepared:
+    request: ToolRequest
+    action_hash: str
+
+
+@dataclass(frozen=True)
+class Computed:
+    prepared: Prepared
+    result: ToolResult
+
+
 class Store:
-    def __init__(self, path: Path, clock: Callable[[], float] = time.time):
+    def __init__(
+        self,
+        path: Path,
+        clock: Callable[[], float] = time.time,
+        *,
+        computer: Computer | None = None,
+    ):
         self.path = path
         self.clock = clock
+        self.computer = computer if computer is not None else InProcessComputer()
         path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
@@ -159,11 +189,35 @@ class Store:
     def execute(
         self, episode_id: str, key: str, action: Action, *, approval_id: str | None = None
     ) -> Execution:
-        """Execute fixed synthetic operations; no shell, model code, network or container.
+        """Authorize, compute outside the DB lock, then recheck before applying effects.
 
         An approval ID is supplied by the trusted caller after review, never inside
         an untrusted Action. A committed key always returns its original result.
         """
+        prepared = self._execute(episode_id, key, action, approval_id=approval_id)
+        if isinstance(prepared, Execution):
+            return prepared
+        result = self.computer.compute(prepared.request)
+        validate_result(prepared.request, result)
+        output = self._execute(
+            episode_id,
+            key,
+            action,
+            approval_id=approval_id,
+            computed=Computed(prepared=prepared, result=result),
+        )
+        assert isinstance(output, Execution)
+        return output
+
+    def _execute(
+        self,
+        episode_id: str,
+        key: str,
+        action: Action,
+        *,
+        approval_id: str | None = None,
+        computed: Computed | None = None,
+    ) -> Execution | Prepared:
         if not key or len(key) > 160:
             raise ValueError("Invalid execution key")
         proposal_hash = digest(action.model_dump(mode="json"))
@@ -235,6 +289,11 @@ class Store:
                         update={"outcome": "DENY", "reason": "APPROVAL_INVALID"}
                     )
 
+            if computed is not None and computed.prepared.action_hash != decision.action_hash:
+                decision = decision.model_copy(
+                    update={"outcome": "DENY", "reason": "STATE_CHANGED"}
+                )
+
             if decision.outcome == "REQUIRE_APPROVAL":
                 if grant is not None and approval_id is not None:
                     decision = decision.model_copy(
@@ -288,21 +347,37 @@ class Store:
 
             result: dict[str, str] = {}
             if decision.outcome == "ALLOW":
+                if computed is None:
+                    return Prepared(
+                        request=ToolRequest(
+                            action=action,
+                            document=DocumentSnapshot(id=resource.id, body=resource.body)
+                            if isinstance(resource, Document)
+                            else None,
+                        ),
+                        action_hash=decision.action_hash,
+                    )
+                validate_result(computed.prepared.request, computed.result)
                 if isinstance(action, ReadAction):
                     assert isinstance(resource, Document)
-                    result = {"document_id": resource.id, "body": resource.body}
+                    assert isinstance(computed.result, DocumentResult)
+                    result = {
+                        "document_id": computed.result.document_id,
+                        "body": computed.result.body,
+                    }
                     if resource.classification == "confidential":
                         db.execute("UPDATE episodes SET confidential=1 WHERE id=?", (episode_id,))
                 else:
+                    assert isinstance(computed.result, TicketEffect)
                     ticket_id = str(uuid.uuid4())
                     db.execute(
                         "INSERT INTO tickets VALUES (?,?,?,?,?)",
                         (
                             ticket_id,
                             episode_id,
-                            action.arguments.project_id,
-                            action.arguments.title,
-                            action.arguments.body,
+                            computed.result.arguments.project_id,
+                            computed.result.arguments.title,
+                            computed.result.arguments.body,
                         ),
                     )
                     result = {"ticket_id": ticket_id}
