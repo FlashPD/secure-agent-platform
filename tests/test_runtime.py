@@ -4,7 +4,9 @@ import sqlite3
 import pytest
 
 from agentguard.computation import InProcessComputer
+from agentguard.contracts import CreateAction
 from agentguard.model import ModelFailure
+from agentguard.reviewer import ExactActionReviewer, ReviewContract
 from agentguard.runtime import Budgets, Runtime, initial_messages
 
 
@@ -77,6 +79,27 @@ def test_denied_action_can_recover(store, episode):
     assert result["status"] == "COMPLETED"
     assert result["trace"][0]["execution"]["decision"]["outcome"] == "DENY"
     assert [ticket["project_id"] for ticket in store.tickets(episode)] == ["atlas"]
+    feedback = json.loads(model.requests[1][0][-1]["content"])
+    assert feedback["recovery"]["original_task"] == "Create a ticket"
+    assert "orion" not in feedback["recovery"]["scope"]["project_ids"]
+    assert "approval_id" not in feedback
+
+
+def test_recovery_never_rewrites_or_authorizes_a_second_forbidden_proposal(store, episode):
+    model = FakeModel([reply(action("orion")), reply(action("orion")), reply(FINAL)])
+    result = Runtime(store, model).run(episode, "Create in Atlas")
+    assert [row["execution"]["decision"]["outcome"] for row in result["trace"]] == ["DENY", "DENY"]
+    assert store.tickets(episode) == []
+
+
+def test_recovery_reminder_shares_output_and_step_budgets(store, episode):
+    model = FakeModel([reply(action("orion"))])
+    result = Runtime(store, model, Budgets(max_tool_result_bytes=100)).run(
+        episode, "Create in Atlas"
+    )
+    assert result["reason"] == "TOOL_RESULT_LIMIT"
+    assert result["model_calls"] == 1
+    assert store.tickets(episode) == []
 
 
 def test_approval_pauses_without_model_credential(store, episode):
@@ -88,6 +111,44 @@ def test_approval_pauses_without_model_credential(store, episode):
     with store.connection() as db:
         approval = db.execute("SELECT status, consumed FROM approvals").fetchone()
         assert tuple(approval) == ("PENDING", 0)
+
+
+@pytest.mark.parametrize("approve", [False, True])
+def test_simulated_review_flows_through_gateway_without_exposing_credentials(
+    store, episode, contract, approve
+):
+    allowed = CreateAction.model_validate(json.loads(action("shared"))["action"])
+    reviewer = ExactActionReviewer(
+        contract, ReviewContract(allowed_actions=(allowed,) if approve else ())
+    )
+    model = FakeModel([reply(action("shared")), reply(FINAL)])
+    result = Runtime(store, model, reviewer=reviewer).run(episode, "Create a shared ticket")
+    assert result["status"] == "COMPLETED"
+    assert result["trace"][0]["simulated_review"]["approved"] is approve
+    assert len(store.tickets(episode)) == int(approve)
+    feedback = json.loads(model.requests[1][0][-1]["content"])
+    assert feedback["outcome"] == ("ALLOW" if approve else "DENY")
+    with store.connection() as db:
+        approval = db.execute("SELECT id, nonce, action_hash FROM approvals").fetchone()
+    for secret in approval:
+        assert secret not in json.dumps(model.requests)
+
+
+def test_cancellation_during_simulated_review_still_prohibits_effect(store, episode, contract):
+    allowed = CreateAction.model_validate(json.loads(action("shared"))["action"])
+
+    class CancellingReviewer(ExactActionReviewer):
+        def review(self, store, request_id):
+            result = super().review(store, request_id)
+            store.cancel(episode)
+            return result
+
+    reviewer = CancellingReviewer(contract, ReviewContract(allowed_actions=(allowed,)))
+    result = Runtime(store, FakeModel([reply(action("shared"))]), reviewer=reviewer).run(
+        episode, "Create a shared ticket"
+    )
+    assert result["status"] == "CANCELLED"
+    assert store.tickets(episode) == []
 
 
 @pytest.mark.parametrize("bad", ["not json", '{"kind":"final","text":"ok","grant":"fake"}'])

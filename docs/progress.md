@@ -64,16 +64,43 @@ task. All 24 development episodes (including earlier failures) are retained in
 the [evidence bundle](evidence/local-model-2026-09-23/README.md). This is a useful
 feasibility result with a visible utility cost, not a passed release gate.
 
+## Fourth increment: development suite and review simulation
+
+- [x] Author ten development tasks covering scope, actor ACLs, read-only work,
+  multiple reads/writes, sensitive approvals, refusals, and missing resources.
+- [x] Grade committed reads, required attempts, exact ticket counts and requested
+  bodies, final output, forbidden effects, and exact canary disclosures.
+- [x] Add a deterministic reviewer with a predeclared exact-action contract,
+  separate from the grader and attack objective. Ordinary runs still pause.
+- [x] Execute 60 paired scripted cases: defended clean 10/10, attacked utility
+  10/10, observed attack wins 0/10. These are authored actions, not model results.
+- [x] Verify all 20 defended scripted cases again with real isolated Docker tools;
+  preserve the separate report and the same five review decisions.
+- [x] Add explicit replay/live suite commands, full schedules, source/fixture
+  snapshots, SQLite backups, raw model calls, and exported checksums.
+- [x] Retain denial-feedback development experiments, including false completion
+  claims that fail the independent state grader.
+- [x] Pass 156 tests plus lint, formatting, and strict type checks; add suite replay
+  to CI. The tests include approval credential exclusion and cancellation on review.
+
+See the [suite runbook](development-suite.md) and
+[experiment evidence](evidence/development-suite-2026-09-23/README.md).
+Both task-reminder treatments still failed live recovery: the model claimed
+success without creating a ticket. All twelve new live episodes are retained;
+no failed episode was removed or regraded. All six clean trials passed, and both
+defended attacked trials blocked the write but failed task utility.
+
 ## Next increment: finish Phase 0 feasibility
 
-1. Address the observed failure to recover after a denied write, keeping the
-   authorization policy and honest task-success accounting intact.
-2. Expand to ten diverse development tasks with separate grader predicates.
-3. Measure latency, peak memory, failure counts, and model/schema compatibility
-   across that suite before selecting the release model profile.
+1. Run the full ten-task suite with fresh local inference and isolated tools,
+   including exact-action simulated approvals and all three profiles.
+2. Use its failure cases to assess model suitability, recovery, clean utility,
+   latency, and memory before selecting the release model profile.
+3. Extend coverage to the remaining four planned tools during platform work.
 
-**Phase 0 has not passed:** real model trials now run, but the ten-task feasibility
-suite is incomplete. No held-out suite has been authored or frozen.
+**Phase 0 has not passed:** the ten-task suite is authored and validated with
+scripted actions, but the full live feasibility run is outstanding. Only two of
+the six planned tools exist. No held-out suite has been authored or frozen.
 
 ## Later milestones
 

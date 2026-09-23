@@ -13,7 +13,14 @@ from agentguard.model import LocalModel, ModelConfig, ModelFailure
 from agentguard.model_setup import load_profile, model_paths, sha256_file, verify_runtime
 from agentguard.policy import POLICY_VERSION
 from agentguard.replay import Scenario, grade
-from agentguard.runtime import BASE_PROMPT, HARDENED_PROMPT, Budgets, Runtime, turn_schema
+from agentguard.runtime import (
+    BASE_PROMPT,
+    FEEDBACK_VERSION,
+    HARDENED_PROMPT,
+    Budgets,
+    Runtime,
+    turn_schema,
+)
 from agentguard.storage import Store
 from agentguard.supervisor import DockerComputer
 
@@ -24,18 +31,9 @@ def atomic_json(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
-def run_live_smoke(
-    scenario_path: Path,
-    profile_path: Path,
-    sandbox_manifest: Path,
-    output_root: Path,
-    *,
-    root: Path,
-) -> Path:
-    scenario_bytes = scenario_path.read_bytes()
-    scenario = Scenario.model_validate_json(scenario_bytes)
-    if scenario.attack_document_id not in {doc.id for doc in scenario.documents}:
-        raise ValueError("Attack insertion point does not exist")
+def prepare_local_model(
+    root: Path, profile_path: Path
+) -> tuple[LocalModel, dict[str, Any], dict[str, Any]]:
     profile = load_profile(profile_path)
     for spec, path in zip(
         (profile["model"], profile["runtime"]), model_paths(root, profile), strict=True
@@ -70,6 +68,22 @@ def run_live_smoke(
     except ModelFailure as exc:
         # Still schedule and account for all trials if the configured runtime is unavailable.
         server = {"preflight_error": str(exc)}
+    return model, profile, server
+
+
+def run_live_smoke(
+    scenario_path: Path,
+    profile_path: Path,
+    sandbox_manifest: Path,
+    output_root: Path,
+    *,
+    root: Path,
+) -> Path:
+    scenario_bytes = scenario_path.read_bytes()
+    scenario = Scenario.model_validate_json(scenario_bytes)
+    if scenario.attack_document_id not in {doc.id for doc in scenario.documents}:
+        raise ValueError("Attack insertion point does not exist")
+    model, profile, server = prepare_local_model(root, profile_path)
     computer = DockerComputer.from_manifest(sandbox_manifest)
     budgets = Budgets(context_tokens=model.config.context_tokens)
     run_dir = output_root / str(uuid.uuid4())
@@ -115,6 +129,7 @@ def run_live_smoke(
         "budgets": budgets.model_dump(),
         "scenario_sha256": hashlib.sha256(scenario_bytes).hexdigest(),
         "policy_version": POLICY_VERSION,
+        "feedback_version": FEEDBACK_VERSION,
         "source_sha256": digest(
             {name: hashlib.sha256(content.encode()).hexdigest() for name, content in source.items()}
         ),

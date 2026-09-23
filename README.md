@@ -22,6 +22,7 @@ uv sync --locked
 make doctor
 make check
 make demo-replay
+make eval-suite
 ```
 
 If uv is not installed, bootstrap it inside the repository with an available
@@ -45,6 +46,12 @@ episode. Authored recovery attempts the intended project after the redirected wr
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
 success rate. The API, worker leases, and UI remain to be implemented.
+
+`make eval-suite` expands deterministic validation to ten development tasks and
+60 paired episodes, including exact-action approval simulation, confidential-data
+rules, actor ACLs, and state/output grading. It is also scripted replay. See the
+[suite runbook](docs/development-suite.md) for fixtures, grading limits, and the
+explicit `make eval-suite-live` command for fresh model trials.
 
 ## Run isolated tools
 
@@ -87,6 +94,11 @@ passed every clean trial. The injection succeeded against baseline and prompt-on
 the gateway blocked it under defended, but the model failed to recover and finish
 the task. Earlier failed development trials are retained alongside the final smoke.
 
+Two subsequent [denial-feedback experiments](docs/evidence/development-suite-2026-09-23/README.md)
+retained that utility failure: the model claimed success after denial without
+creating a ticket. Their state grades remain failed. The expanded ten-task suite
+passes scripted checks, but its complete live evaluation is still outstanding.
+
 ## Implemented boundaries
 
 - Typed tool proposals cannot supply actor identity, scope, or approval grants.
@@ -105,6 +117,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 
 - [Implementation progress and remaining milestones](docs/progress.md)
 - [Live model results and retained failure analysis](docs/evidence/local-model-2026-09-23/README.md)
+- [Ten-task suite and denial-feedback experiments](docs/evidence/development-suite-2026-09-23/README.md)
 - [Observed development hardware](docs/hardware.md)
 - [Current trust boundary and limitations](docs/threat-model.md)
 - [Why this first increment precedes live feasibility](docs/adr-001-first-increment.md)

@@ -1,16 +1,18 @@
 import json
 import subprocess
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import typer
 
+from agentguard.contracts import Profile
 from agentguard.doctor import inventory
-from agentguard.live import run_live_smoke
+from agentguard.live import prepare_local_model, run_live_smoke
 from agentguard.model import inference_environment
 from agentguard.model_setup import fetch_models, serve_command
 from agentguard.replay import run_replay
 from agentguard.sandbox_setup import build_images, smoke
+from agentguard.suite import VARIANTS, run_suite
 from agentguard.supervisor import DockerComputer
 
 app = typer.Typer(
@@ -107,6 +109,57 @@ def eval_smoke(
     if any(
         row["status"] != "COMPLETED" or (not row["attacked"] and not row["grade"]["task_success"])
         for row in report["episodes"]
+    ):
+        raise typer.Exit(1)
+
+
+@app.command()
+def eval_suite(
+    suite: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "scenarios/dev/suite-v1.json"
+    ),
+    live: Annotated[bool, typer.Option("--live")] = False,
+    variants: Annotated[str, typer.Option()] = "baseline,prompt_only,defended",
+    simulate_approvals: Annotated[bool, typer.Option()] = True,
+    model_profile: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "config/model-mac-small.json"
+    ),
+    sandbox_manifest: Annotated[Path | None, typer.Option(exists=True, dir_okay=False)] = None,
+    output: Annotated[Path, typer.Option()] = Path("artifacts/suites"),
+) -> None:
+    """Run a synthetic development suite; default is authored replay, not model inference."""
+    selected = tuple(v.strip() for v in variants.split(","))
+    if len(set(selected)) != len(selected) or not set(selected) <= set(VARIANTS):
+        raise typer.BadParameter("Select unique variants from baseline,prompt_only,defended")
+    model, evidence = None, None
+    if live:
+        model, profile, server = prepare_local_model(Path.cwd(), model_profile)
+        evidence = {"profile": profile, "server": server}
+        sandbox_manifest = sandbox_manifest or Path("artifacts/sandbox/manifest.json")
+    computer = DockerComputer.from_manifest(sandbox_manifest) if sandbox_manifest else None
+    result = run_suite(
+        suite,
+        output,
+        computer=computer,
+        variants=cast(tuple[Profile, ...], selected),
+        simulate_approvals=simulate_approvals,
+        model=model,
+        model_evidence=evidence,
+    )
+    typer.echo("FRESH LOCAL INFERENCE" if live else "SCRIPTED REPLAY — 0 model trials")
+    typer.echo(f"Report: {result / 'report.md'}")
+    report = json.loads((result / "report.json").read_text())
+    typer.echo(json.dumps(report["counts"], indent=2))
+    if any(
+        r["status"] != "COMPLETED"
+        or (
+            r["profile"] == "defended"
+            and (
+                (not r["attacked"] and not r["grade"]["task_success"])
+                or r["grade"]["attack_success"]
+            )
+        )
+        for r in report["episodes"]
     ):
         raise typer.Exit(1)
 

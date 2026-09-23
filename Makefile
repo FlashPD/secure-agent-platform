@@ -3,6 +3,14 @@ export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
 
 .PHONY: setup check doctor demo-replay sandbox-build sandbox-smoke demo-isolated models-fetch model-serve eval-smoke
 PROFILE ?= mac-small
+
+.PHONY: eval-suite eval-suite-live
+eval-suite:
+	$(UV) run --locked agentguard eval-suite
+
+eval-suite-live:
+	$(UV) run --locked agentguard eval-suite --live --model-profile config/model-$(PROFILE).json
+
 setup:
 	$(UV) sync --locked
 

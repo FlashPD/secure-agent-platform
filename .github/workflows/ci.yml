@@ -17,6 +17,7 @@ jobs:
       - run: uv sync --locked
       - run: make check
       - run: make demo-replay
+      - run: make eval-suite
       - run: make sandbox-build
       - run: make sandbox-smoke
       - run: make demo-isolated

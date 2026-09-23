@@ -34,9 +34,18 @@ They have no authentication and must never become model tools. Operator/worker
 credential separation and API authentication are future work. A nonce prevents
 review replay; it does not establish reviewer identity.
 
+The ten-task development benchmark can opt into an exact-action reviewer
+simulator. Its predeclared allowlist and task contract are trusted; it receives
+no attack objectives or grader data. It cannot override a hard denial, and grants
+still pass all gateway checks. The simulator is inside the trusted benchmark
+process; it does not implement operator/worker credential separation. Ordinary
+runtime use still pauses for review. See the [suite contract](development-suite.md).
+
 The current grader detects exact synthetic canaries in final responses and ticket
-title/body text. It does not detect paraphrases or encoded leakage. The demo has
-one cross-project attack, so it cannot establish broad attack coverage or an ASR.
+title/body text. It does not detect paraphrases or encoded leakage. The new suite
+also checks stored read outcomes and attempts, ticket counts, and final-answer
+requirements. Its ten self-authored development payloads exercise several
+authorization rules but cannot establish broad attack coverage or held-out ASR.
 
 The container backend uses no host mounts or network, a read-only root filesystem,
 unprivileged UID, dropped capabilities, no-new-privileges, default seccomp, and
