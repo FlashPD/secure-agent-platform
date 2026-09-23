@@ -21,7 +21,12 @@ IMAGE_PATTERN = re.compile(r"sha256:[0-9a-f]{64}\Z")
 
 
 def bounded_process(
-    command: list[str], payload: bytes, *, timeout: float, output_limit: int = MAX_OUTPUT
+    command: list[str],
+    payload: bytes,
+    *,
+    timeout: float,
+    output_limit: int = MAX_OUTPUT,
+    env: dict[str, str] | None = None,
 ) -> bytes:
     """Bound input writes as well as output reads; never buffer unbounded child output."""
     if len(payload) > MAX_INPUT:
@@ -33,6 +38,7 @@ def bounded_process(
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            env=env,
         )
     except OSError as exc:
         raise ToolFailure("RUNTIME_UNAVAILABLE") from exc

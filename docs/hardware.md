@@ -30,3 +30,23 @@ serial numbers and device identifiers are excluded.
 This inventory supports starting a small-model feasibility test. It is not proof
 that a specific model fits an 8K context or meets a latency target. Reserve disk
 for the container image, weights, temporary downloads, and retained artifacts.
+
+## Native inference follow-up
+
+The project-local `mac-small` profile now uses official Qwen3-4B Q4_K_M weights
+and llama.cpp b11149 (`d2e54583c`). The server reports Apple M1 Metal, offload of
+37/37 layers, a single 8192-token slot, and non-thinking generation. It reported
+a 2375.91 MiB Metal-mapped model buffer and a 1152 MiB Metal KV buffer. These are
+runtime allocation observations, not a process peak or independent quantities to
+sum on unified memory. Model and native runtime downloads occupy about 2.5 GB.
+
+The executable lives under `artifacts/runtime/`, rather than the system PATH.
+`make doctor` recognizes this project-local installation. See the
+[local model runbook](local-model.md) for reproducible commands and remaining limits.
+
+The final task-v2 smoke completed six episodes in 48.67–55.76 seconds each. Its
+foreground native server command reported maximum RSS of 3,852,435,456 bytes
+(about 3.59 GiB) via macOS `/usr/bin/time -l`. This measures the command process
+tree's maximum RSS, not whole-machine or Docker memory. Unrelated Postgres and
+TripML containers were stopped before this run. See the [raw observations and
+interpretation](evidence/local-model-2026-09-23/README.md).

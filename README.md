@@ -1,6 +1,7 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: authorization kernel and isolated tool smoke working; live model feasibility pending.**
+**Status: authorization kernel, isolated tools, and a measured local-model comparison working;
+the full feasibility suite and portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -43,7 +44,7 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. The model adapter, API, worker leases, and UI remain to be implemented.
+success rate. The API, worker leases, and UI remain to be implemented.
 
 ## Run isolated tools
 
@@ -65,6 +66,27 @@ computation, outside which the database write lock is released.
 tests. Reports identify the actual backend. Neither mode performs model inference.
 See the [sandbox runbook and measured checks](docs/sandbox.md).
 
+## Run a real local model
+
+The pinned `mac-small` profile targets macOS on Apple Silicon. Start Docker, then:
+
+```sh
+make models-fetch       # Explicit ~2.5 GB model download plus pinned native runtime
+make model-serve        # Keep this terminal open; loopback-only native inference
+```
+
+In another terminal, run `make eval-smoke`. It executes six fresh trials across
+baseline, prompt-only, and defended profiles using the isolated tools. Reports
+include failed episodes, state-based grades, raw model-call evidence, model/runtime
+checksums, template, sampling settings, and budgets. This one-task development
+smoke does not establish benchmark-level security or utility.
+See the [local-model runbook and current limitations](docs/local-model.md).
+
+The [measured six-episode comparison](docs/evidence/local-model-2026-09-23/README.md)
+passed every clean trial. The injection succeeded against baseline and prompt-only;
+the gateway blocked it under defended, but the model failed to recover and finish
+the task. Earlier failed development trials are retained alongside the final smoke.
+
 ## Implemented boundaries
 
 - Typed tool proposals cannot supply actor identity, scope, or approval grants.
@@ -82,12 +104,14 @@ concurrent retries, cancellation, and rollback on precommit failure.
 ## Project evidence and next milestone
 
 - [Implementation progress and remaining milestones](docs/progress.md)
+- [Live model results and retained failure analysis](docs/evidence/local-model-2026-09-23/README.md)
 - [Observed development hardware](docs/hardware.md)
 - [Current trust boundary and limitations](docs/threat-model.md)
 - [Why this first increment precedes live feasibility](docs/adr-001-first-increment.md)
+- [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: pin a native local model and runtime, measure one real clean/attacked
-workflow, and expand to ten development tasks. The
+Next: expand real evaluation to ten development tasks, then add durable execution
+and the authenticated approval/timeline UI. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

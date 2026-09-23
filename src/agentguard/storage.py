@@ -88,7 +88,25 @@ CREATE TABLE IF NOT EXISTS audit_events (
     kind TEXT NOT NULL,
     payload TEXT NOT NULL
 );
-PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS agent_runs (
+    episode_id TEXT PRIMARY KEY REFERENCES episodes(id),
+    status TEXT NOT NULL,
+    task TEXT NOT NULL,
+    budgets TEXT NOT NULL,
+    initial_messages TEXT NOT NULL,
+    result TEXT
+);
+CREATE TABLE IF NOT EXISTS model_calls (
+    episode_id TEXT NOT NULL REFERENCES agent_runs(episode_id),
+    step INTEGER NOT NULL,
+    request TEXT NOT NULL,
+    max_tokens INTEGER NOT NULL,
+    raw_response TEXT,
+    elapsed_seconds REAL,
+    error TEXT,
+    PRIMARY KEY (episode_id, step)
+);
+PRAGMA user_version = 2;
 """
 
 
@@ -126,7 +144,7 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 1, 2):
                 raise ValueError(f"Unsupported database schema: {version}")
             db.execute("PRAGMA journal_mode=WAL")
             db.executescript(SCHEMA)
@@ -187,14 +205,28 @@ class Store:
         )
 
     def execute(
-        self, episode_id: str, key: str, action: Action, *, approval_id: str | None = None
+        self,
+        episode_id: str,
+        key: str,
+        action: Action,
+        *,
+        approval_id: str | None = None,
+        deadline: float | None = None,
+        deadline_clock: Callable[[], float] = time.monotonic,
     ) -> Execution:
         """Authorize, compute outside the DB lock, then recheck before applying effects.
 
         An approval ID is supplied by the trusted caller after review, never inside
         an untrusted Action. A committed key always returns its original result.
         """
-        prepared = self._execute(episode_id, key, action, approval_id=approval_id)
+        prepared = self._execute(
+            episode_id,
+            key,
+            action,
+            approval_id=approval_id,
+            deadline=deadline,
+            deadline_clock=deadline_clock,
+        )
         if isinstance(prepared, Execution):
             return prepared
         result = self.computer.compute(prepared.request)
@@ -205,6 +237,8 @@ class Store:
             action,
             approval_id=approval_id,
             computed=Computed(prepared=prepared, result=result),
+            deadline=deadline,
+            deadline_clock=deadline_clock,
         )
         assert isinstance(output, Execution)
         return output
@@ -217,6 +251,8 @@ class Store:
         *,
         approval_id: str | None = None,
         computed: Computed | None = None,
+        deadline: float | None = None,
+        deadline_clock: Callable[[], float] = time.monotonic,
     ) -> Execution | Prepared:
         if not key or len(key) > 160:
             raise ValueError("Invalid execution key")
@@ -262,7 +298,11 @@ class Store:
             count = db.execute(
                 "SELECT count(*) FROM executions WHERE episode_id=?", (episode_id,)
             ).fetchone()[0]
-            if episode["cancelled"] or (previous is None and count >= episode["max_actions"]):
+            if (
+                episode["cancelled"]
+                or (previous is None and count >= episode["max_actions"])
+                or (deadline is not None and deadline_clock() >= deadline)
+            ):
                 reason = "CANCELLED" if episode["cancelled"] else "BUDGET_EXHAUSTED"
                 return Execution(
                     decision=decision.model_copy(update={"outcome": "DENY", "reason": reason})
@@ -429,6 +469,13 @@ class Store:
                 "REVIEWED",
                 {"status": status, "reviewer": reviewer},
             )
+
+    def is_cancelled(self, episode_id: str) -> bool:
+        with self.connection() as db:
+            row = db.execute("SELECT cancelled FROM episodes WHERE id=?", (episode_id,)).fetchone()
+            if row is None:
+                raise KeyError("Unknown episode")
+            return bool(row["cancelled"])
 
     def cancel(self, episode_id: str) -> None:
         with self.connection() as db:

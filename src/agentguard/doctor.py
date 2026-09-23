@@ -31,6 +31,10 @@ def inventory(root: Path) -> dict[str, Any]:
         probe([docker, "version", "--format", "{{.Server.Version}}"]) if docker else (False, "")
     )
     llama = shutil.which("llama-server")
+    local_llama = root / "artifacts/runtime"
+    local_servers = sorted(
+        str(path.relative_to(root)) for path in local_llama.glob("*/llama-*/llama-server")
+    )
     model_root = root / "artifacts" / "models"
     models = sorted(str(path.relative_to(root)) for path in model_root.glob("*.gguf"))
     return {
@@ -44,12 +48,17 @@ def inventory(root: Path) -> dict[str, Any]:
         "docker_daemon": docker_ready,
         "docker_server_version": docker_version if docker_ready else None,
         "llama_server_on_path": bool(llama),
+        "project_local_llama_servers": local_servers,
         "model_files": models,
         "replay_ready": sys.version_info >= (3, 12),
         "live_feasibility": "NOT_VALIDATED",
         "next_steps": [
             *([] if docker_ready else ["Start Docker Desktop, then rerun preflight."]),
-            *([] if llama else ["Install and pin a native llama.cpp server."]),
+            *(
+                []
+                if llama or local_servers
+                else ["Run make models-fetch to install a pinned runtime."]
+            ),
             *(
                 []
                 if models

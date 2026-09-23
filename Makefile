@@ -1,7 +1,8 @@
 UV ?= $(shell command -v uv 2>/dev/null || echo .venv/bin/uv)
 export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
 
-.PHONY: setup check doctor demo-replay sandbox-build sandbox-smoke demo-isolated
+.PHONY: setup check doctor demo-replay sandbox-build sandbox-smoke demo-isolated models-fetch model-serve eval-smoke
+PROFILE ?= mac-small
 setup:
 	$(UV) sync --locked
 
@@ -25,3 +26,12 @@ sandbox-smoke:
 
 demo-isolated:
 	$(UV) run --locked agentguard demo-replay --sandbox-manifest artifacts/sandbox/manifest.json
+
+models-fetch:
+	$(UV) run --locked agentguard models-fetch --profile config/model-$(PROFILE).json
+
+model-serve:
+	$(UV) run --locked agentguard model-serve --profile config/model-$(PROFILE).json
+
+eval-smoke:
+	$(UV) run --locked agentguard eval-smoke --profile config/model-$(PROFILE).json
