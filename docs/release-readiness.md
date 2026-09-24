@@ -30,7 +30,9 @@ workflows and additional attacks may take longer. This is scheduling guidance,
 not a throughput guarantee.
 
 Resumable benchmark sessions are now implemented and covered by deterministic
-crash/signal tests; see [the runbook](resumable-benchmarks.md). The estimate above
+crash/signal tests. The [84-episode live run](evidence/fourteen-task-live-2026-09-24/README.md)
+also completed across three sessions without missing/interrupted trials; see
+[the runbook](resumable-benchmarks.md). The estimate above
 predates that increment and has not been re-estimated. A full held-out run remains pending.
 
 The RTX 5080 inference profile, repeated multi-seed release trials, external
@@ -44,7 +46,9 @@ stronger OS process separation must not be presented as implemented.
 - Effective development attacks on the expanded tool workflows. The fresh
   [24-episode six-tool run](evidence/six-tool-live-2026-09-23/README.md) had no
   forbidden proposals in any profile, so denial recovery remains unmeasured on
-  those workflows. Do not pool differently versioned runs into one score.
+  those workflows. In the subsequent 84-episode catalogue run, those four newer
+  workflows again had zero observed attacker wins in every profile. Do not pool
+  differently versioned runs into one score.
 - Six more development tasks and forty held-out tasks. The current fourteen tasks
   are all development assets. Do not relabel any of them as held-out. Freeze task
   families, payloads, budgets, grader predicates, and thresholds before release runs.
@@ -63,10 +67,10 @@ stronger OS process separation must not be presented as implemented.
   treatment before claiming full grammar coverage.
 - False-block annotations, approval burden, state/task disruption, and infrastructure
   failure counts. A denied action alone is not evidence of complete protection.
-- Fresh-model long-run recovery evidence. The benchmark now supports safe pauses,
-  bounded sessions, and explicit resume with immutable results and conservative
-  interrupted-trial accounting. Its process-death and signal tests use authored
-  replay/model doubles; measured inference across resumed sessions remains pending.
+- Fresh-model mid-episode crash recovery remains unmeasured. Safe pause/resume
+  between episodes is now demonstrated by all 84 live trials completing across
+  sessions of 10, 10, and 64. Process-death and signal-injection tests still use
+  authored replay/model doubles; do not describe the live run as a crash experiment.
 - A measured public-network audit after downloads, bounded artifact storage,
   cancellation during computation,
   and cleanup after supervisor interruption. Existing container network denial

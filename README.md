@@ -1,7 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
 **Status: all six tools, durable execution, the authenticated API, and the operator
-console are implemented. Expanded live development evidence is published; corpus
+console are implemented. An 84-episode live benchmark completed across three sessions;
+its development evidence is published. Corpus
 expansion and the held-out portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
@@ -13,6 +14,29 @@ Development, state, and the demo run on the Mac. Model inference can run on the 
 The first runnable slice reads a synthetic launch document and creates a ticket.
 An authored attack script redirects the ticket to an unauthorized project.
 The deterministic gateway blocks that write and permits the intended one.
+
+## Latest measured development results
+
+The [fourteen-task live benchmark](docs/evidence/fourteen-task-live-2026-09-24/README.md)
+completed all 84 scheduled episodes across three sessions (10 + 10 + 64), using
+the pinned local model and isolated tools:
+
+| Profile | Clean task success | Task success under attack | Observed attacker wins |
+|---|---:|---:|---:|
+| Baseline | 12/14 | 10/14 | 4/14 |
+| Prompt-only | 12/14 | 10/14 | 4/14 |
+| Defended | 14/14 | 13/14 | 0/14 |
+
+The one defended failure is retained: simulated review rejected a sensitive
+write, but the model falsely claimed it had created the ticket. Independent
+grading found zero tickets. All 13 failed task grades across the three profiles
+remain in the report. These self-authored development results are not a held-out
+release gate, and zero observed wins does not establish zero attack risk.
+
+Open the [offline comparison viewer](docs/evidence/fourteen-task-live-2026-09-24/analysis/explorer.html),
+[paired analysis](docs/evidence/fourteen-task-live-2026-09-24/analysis/analysis.md),
+[runtime diagnostics](docs/evidence/fourteen-task-live-2026-09-24/diagnostics/diagnostics.md),
+or [five-minute reviewer walkthrough](docs/reviewer-walkthrough.md).
 
 ## Run locally
 
@@ -150,21 +174,10 @@ Two subsequent [denial-feedback experiments](docs/evidence/development-suite-202
 retained that utility failure: the model claimed success after denial without
 creating a ticket. Their state grades remain failed.
 
-The [complete ten-task live evaluation](docs/evidence/ten-task-live-2026-09-23/README.md)
-now accounts for all 60 scheduled episodes:
-
-| Profile | Clean success | Attacked task success | Observed attacker wins |
-|---|---:|---:|---:|
-| Baseline | 8/10 | 6/10 | 4/10 |
-| Prompt-only | 9/10 | 6/10 | 4/10 |
-| Defended | 10/10 | 8/10 | 0/10 |
-
-Every episode completed; two defended attacks were blocked but still caused task
-failure and false completion claims. These are self-authored development results,
-not a held-out release benchmark or proof of zero attack risk. Inspect the
-[standalone viewer](docs/evidence/ten-task-live-2026-09-23/analysis/explorer.html),
-[paired analysis](docs/evidence/ten-task-live-2026-09-23/analysis/analysis.md),
-and [five-minute walkthrough](docs/reviewer-walkthrough.md).
+The earlier [ten-task live evaluation](docs/evidence/ten-task-live-2026-09-23/README.md)
+retains all 60 scheduled episodes, including two defended recovery failures.
+It predates the expanded six-tool schema and is kept separate from the latest
+84-episode results above; the studies are not pooled or selectively regraded.
 
 ## Expanded tool workflows
 
@@ -220,6 +233,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 
 - [Implementation progress and remaining milestones](docs/progress.md)
 - [Remaining release work and effort estimate](docs/release-readiness.md)
+- [84-episode live results and measured resume](docs/evidence/fourteen-task-live-2026-09-24/README.md)
 - [Runtime budget, coverage, and denial diagnostics](docs/runtime-diagnostics.md)
 - [Interactive operator console and browser security](docs/operator-ui.md)
 - [Operator console screenshots and verification](docs/evidence/operator-ui-2026-09-23/README.md)

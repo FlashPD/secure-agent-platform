@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated September 23, 2026. The architecture plan remains the target design.
+Updated September 24, 2026. The architecture plan remains the target design.
 
 ## First increment: authorization kernel and scripted evidence
 
@@ -250,6 +250,22 @@ resource resolution, tools, and inference. No held-out release result is claimed
 
 See [the terminal runbook](resumable-benchmarks.md). This is deterministic recovery
 evidence, not a fresh-model experiment or the planned 400-episode release benchmark.
+
+## Twelfth increment: fourteen-task live evidence and measured resume
+
+- [x] Account for all 84 fresh model trials across three sessions of 10, 10, and 64 episodes.
+- [x] Verify every published result against the local benchmark journal and original checksums.
+- [x] Publish clean utility 12/14 baseline, 12/14 prompt-only, 14/14 defended;
+  attacked utility 10/14, 10/14, 13/14; observed attacker wins 4/14, 4/14, 0/14.
+- [x] Retain all 13 failed task grades, including the defended false completion after review rejection.
+- [x] Export paired uncertainty, conditional denominators, the offline viewer, and runtime diagnostics.
+- [x] Reconcile 275 calls and 9,484 generated tokens; distinguish episode timing from session wall time.
+
+See [the complete publication](evidence/fourteen-task-live-2026-09-24/README.md).
+There are no missing or interrupted episodes. This demonstrates live pause/resume
+between episodes, not live mid-episode crash recovery. The four newer tool-workflow
+attacks still show no observed wins in any profile. No held-out release gate has
+passed, and earlier versioned studies remain unchanged. Packaging performed no inference.
 
 ## Next increment: corpus quality and release evaluation
 

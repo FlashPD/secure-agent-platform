@@ -19,8 +19,9 @@ confidential document, search snippet, or ticket preview marks the episode confi
 require review; shared writes are denied. Shared writes without confidential reads
 also require review. Document shares always require review of source and destination;
 updates bind the existing ticket and expected version. Baseline/prompt-only profiles deliberately disable these
-business checks inside a synthetic episode. Live evidence now compares all three
-profiles on ten development tasks; it cannot establish held-out or general attack protection.
+business checks inside a synthetic episode. The latest
+[live evidence](evidence/fourteen-task-live-2026-09-24/README.md) compares all three
+profiles on fourteen development tasks; it cannot establish held-out or general attack protection.
 
 SQLite `BEGIN IMMEDIATE` serializes preparation and effect application separately.
 Computation runs between transactions, without holding the write lock. Resource
@@ -65,7 +66,7 @@ tab memory; logout aborts requests and clears the view. The UI does not silently
 replace inspected snapshots or retry reviews. See [the API contract](control-plane.md)
 and [browser boundary and tests](operator-ui.md).
 
-The ten-task development benchmark can opt into an exact-action reviewer
+The development benchmark can opt into an exact-action reviewer
 simulator. Its predeclared allowlist and task contract are trusted; it receives
 no attack objectives or grader data. It cannot override a hard denial, and grants
 still pass all gateway checks. The simulator is inside the trusted benchmark
