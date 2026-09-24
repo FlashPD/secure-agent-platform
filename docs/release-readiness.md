@@ -1,0 +1,77 @@
+# Remaining work for a portfolio release
+
+The application, six tools, deterministic authorization tests, durable worker,
+operator console, and development evidence are implemented. The release is still
+experimental: the planned held-out corpus and product-quality gate do not exist.
+Completing application features is distinct from validating agent behavior.
+
+## Remaining milestones and estimate
+
+One focused engineer-day is about six hours, including verification and writing.
+These estimates are planning ranges, not a commitment or measured implementation
+velocity. Model failures and corpus authoring are the main uncertainties.
+
+| Work | Done when | Focused days |
+|---|---|---:|
+| Expanded live feasibility | All 24 original new-tool trials accounted for; budgets, failures, and denial outcomes published; wording follow-ups kept separate | Completed this increment |
+| Corpus and split | 20 development and 40 held-out tasks, four attacks per held-out task, workflow-family separation, provenance, and freeze manifest | 4–6 |
+| Release evaluation and gates | Resumable long-run accounting; all 400 required episodes; paired task-cluster intervals, ablation, compatibility checks, explicit gate result | 2–3 |
+| Reliability evidence | Remaining cancellation, artifact-quota, model-failure, orphan-container, telemetry, policy-latency, and public-network checks implemented or explicitly scoped with acceptance consequences | 2–3 |
+| Portfolio packaging | Model/system card, architecture decisions, clean-checkout reproduction, sanitized evidence, five-minute recording, and final reviewer walkthrough | 1–2 |
+
+With expanded live feasibility complete, the remaining estimate is approximately
+**9–14 focused days (roughly 55–85 hours)**, or about **4–6 weeks at 15 hours/week**.
+The estimate at the start of this increment was 10–16 days (60–100 hours).
+Unattended inference adds elapsed time. A larger-model investigation or substantial changes
+identified by development trials can extend the estimate. The first six-tool
+run took 54 minutes for 24 episodes (mean about 135 seconds). A simple linear
+projection gives about 15 hours for 400 episodes before setup/recovery; held-out
+workflows and additional attacks may take longer. This is scheduling guidance,
+not a throughput guarantee.
+
+The RTX 5080 inference profile, repeated multi-seed release trials, external
+AgentDojo adapter, hosted deployment, and optional telemetry dashboards are not
+on this critical path. Production multi-tenancy and hostile-host protection remain
+outside the first-release goals. HTTP credential separation already exists;
+stronger OS process separation must not be presented as implemented.
+
+## Evidence that still needs to be collected
+
+- Effective development attacks on the expanded tool workflows. The fresh
+  [24-episode six-tool run](evidence/six-tool-live-2026-09-23/README.md) had no
+  forbidden proposals in any profile, so denial recovery remains unmeasured on
+  those workflows. Do not pool differently versioned runs into one score.
+- Six more development tasks and forty held-out tasks. The current fourteen tasks
+  are all development assets. Do not relabel any of them as held-out. Freeze task
+  families, payloads, budgets, grader predicates, and thresholds before release runs.
+- Four fixed attack families for each held-out task; the current suite has one
+  payload per task. Extend scheduling and paired analysis to keep correlated
+  payloads together. Include tool-response insertion points and specify which
+  encoded canary disclosures are graded; exact plaintext detection alone is limited.
+- Release gates that require compatible, complete evidence. Initial objectives
+  from the architecture plan are clean utility at least 80%, defended clean-utility
+  loss no greater than five percentage points, and lower observed attack success
+  without more ungraded trials. A failed objective must remain visible and result
+  in an experimental release, not an edited denominator.
+- Structured-generation compatibility: the pinned runtime does not enforce the
+  search query’s unanchored nonblank regex in its grammar. Host validation still
+  enforces it. Test an equivalent supported constraint in a declared schema
+  treatment before claiming full grammar coverage.
+- False-block annotations, approval burden, state/task disruption, and infrastructure
+  failure counts. A denied action alone is not evidence of complete protection.
+- Long-run recovery. The application worker is durable; the synchronous evaluation
+  command records incremental progress but does not automatically resume a killed
+  benchmark. This gap matters before scheduling hundreds of serial episodes.
+- A measured public-network audit after downloads, bounded artifact storage,
+  cancellation during computation,
+  and cleanup after supervisor interruption. Existing container network denial
+  is not a host-wide traffic audit. Two 1,000-call policy microbenchmarks now
+  satisfy the initial narrowly scoped latency measurement; broader step timing
+  and telemetry remain incomplete.
+- An independent clean-checkout walkthrough that verifies the published checksums
+  and reproduces a small fresh benchmark. The full release must account for all
+  400 required baseline/defended episodes, whether successful or not.
+
+The original [architecture plan](../arch_plan/secure-agent-platform-plan.md)
+remains the acceptance target. [Implementation progress](progress.md) and linked
+versioned evidence distinguish completed work from these remaining objectives.

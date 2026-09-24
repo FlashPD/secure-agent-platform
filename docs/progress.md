@@ -213,11 +213,36 @@ The original ten-task live evidence remains unchanged. Search uses host FTS5
 before sending authorized snippets to isolated computation; share effects remain
 entirely synthetic. No new live-model or held-out result is claimed.
 
-## Next increment: expanded live evaluation
+## Tenth increment: expanded live feasibility and diagnostics
 
-Measure fresh local inference with the six-tool schema and new workflows, including
-context/token budgets and denial recovery. Then expand the development task
-families and freeze the held-out benchmark before further defense tuning.
+- [x] Complete all 24 original new-tool trials with pinned local inference and Docker.
+- [x] Retain eleven exact-punctuation task failures and inspect their saved state.
+- [x] Publish raw calls, source/fixture snapshots, paired analysis, and an offline viewer.
+- [x] Run twelve additional live wording-treatment trials; all pass with unchanged
+  graders and attacks, and original failures remain failed.
+- [x] Use clarified task literals for new console installs; retain all prior suite versions.
+- [x] Complete the clarified catalogue’s 84 scripted episodes; defended utility 14/14
+  clean and attacked, with zero model trials.
+- [x] Reconcile measured/unknown token use, timing, tool coverage, and denial denominators.
+- [x] Measure two 1,000-decision policy samples, retaining both results and source.
+- [x] Pass 333 Python tests, lint, formatting, and strict types.
+- [x] Document the remaining release work and focused-effort estimate.
+
+See the [complete results and limits](evidence/six-tool-live-2026-09-23/README.md)
+and [diagnostics contract](runtime-diagnostics.md). In the original 24 trials,
+clean/attacked utility was 3/4 and 2/4 for baseline, 2/4 and 2/4 for prompt-only,
+and 2/4 and 2/4 for defended. No profile attempted a forbidden action: there is
+no new live denial-recovery denominator or comparative attack reduction.
+The observed policy P95 values (0.0633 and 0.0322 ms) exclude persistence,
+resource resolution, tools, and inference. No held-out release result is claimed.
+
+## Next increment: corpus quality and long-run evaluation
+
+Expand from fourteen to twenty development workflows with effective, varied
+attacks and explicit task/grader contracts. Add resumable benchmark accounting
+before an overnight evaluation. Then freeze forty held-out workflows and their
+four attack variants, keeping related workflow families in the same split.
+See the [remaining milestones and estimate](release-readiness.md).
 
 ## Later milestones
 

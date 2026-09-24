@@ -82,3 +82,31 @@ load and container overhead; the analyzer does not isolate policy latency,
 inference latency, human review time, or whole-machine memory. No release gate is
 implemented by this command. Its successful exit means the analysis is usable,
 not that the model meets the architecture's utility or security objectives.
+
+## Runtime diagnostics
+
+The separate diagnostics command reconciles the same checksum-verified evidence
+with its saved model-call ledger:
+
+```sh
+uv run --locked agentguard eval-diagnostics artifacts/suites/<run-id> \
+  --output artifacts/diagnostics/<run-id>
+```
+
+It rejects foreign or duplicate call IDs, missing calls, inconsistent step
+sequences, and token totals that disagree with the episode report. Lost or malformed
+responses keep their reserved allowance separate from measured generated tokens.
+The exported JSON/Markdown reports include reported prompt/output tokens, context
+headroom, observed call/episode durations, recorded decisions for each tool, and
+independently graded task outcomes for episodes containing a denial.
+
+These are descriptive diagnostics. Server-reported usage is not independent
+metering, context headroom is not the tokenizer's separately measured admission
+count, and call duration includes prompt processing as well as generation. Tool
+coverage counts recorded policy decisions; a failed computation can leave no
+completed trace entry. Task success after denial is not a causal recovery estimate;
+an expected refusal can succeed without another allowed action. Empty recovery
+denominators and missing timing measurements remain explicit.
+
+Diagnostics are written outside the original run, with source and checksums.
+They never change a grade, retry a model call, or convert replay into fresh evidence.

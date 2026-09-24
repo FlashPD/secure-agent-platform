@@ -58,3 +58,15 @@ server command maximum RSS was 3,852,910,592 bytes, about 3.59 GiB. Tests and br
 checks ran concurrently during part of the session, so these are feasibility
 observations rather than controlled performance measurements. The server was
 stopped afterward, and Docker reported no running containers at cleanup.
+
+## Expanded six-tool evaluation
+
+The [six-tool live evidence](evidence/six-tool-live-2026-09-23/README.md) contains
+24 original episodes and two separate six-episode wording follow-ups. The
+original episode durations were 91.43–178.00 seconds (median 136.61), with
+54.04 minutes of summed episode time. The native server command’s maximum RSS
+across all three runs was 3,800,367,104 bytes (3.54 GiB). All 37 layers
+were offloaded to Metal. Tests/analysis overlapped parts of inference, so neither
+the timing nor the difference from earlier sessions is a controlled comparison.
+The server was stopped afterward, port 8101 had no listener, and no `agentguard-`
+containers remained. Whole-machine memory and public-network traffic were not measured.

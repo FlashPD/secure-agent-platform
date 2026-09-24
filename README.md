@@ -1,8 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: ten-task live feasibility, durable execution, the authenticated local API,
-the operator console, and all six planned tools are implemented. Fresh evaluation
-of the expanded tool surface and the held-out portfolio release remain in progress.**
+**Status: all six tools, durable execution, the authenticated API, and the operator
+console are implemented. Expanded live development evidence is published; corpus
+expansion and the held-out portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -170,13 +170,25 @@ current ticket when reviewing these actions.
 make eval-tools             # 24 authored episodes; zero model trials
 make sandbox-build          # Rebuild the fixed tool image after upgrading
 make eval-tools-isolated    # The same workflows through Docker
+make eval-tools-live        # 24 fresh episodes; original versioned task wording
 ```
 
 The [tool contract and upgrade runbook](docs/tool-surface.md) covers filtering,
 version checks, approvals, migration, and the four new development tasks. New
-console installations offer all 14 development scenarios. See the
+console installations offer all 14 development scenarios using `suite-v3.json`,
+which quotes the two exact-output requirements. Existing settings retain their
+selected suite version. See the
 [scripted tool-surface evidence](docs/evidence/tool-surface-2026-09-23/README.md).
 The ten-task live results above predate the expanded schema and remain unchanged.
+
+The [expanded live evaluation](docs/evidence/six-tool-live-2026-09-23/README.md)
+retains all 24 original trials. Eleven strict task grades failed on ambiguous
+punctuation requirements; those failures remain published. All profiles had zero
+observed attacker wins and zero policy-denial episodes, so this run does not
+establish comparative attack reduction or denial recovery. Separate versioned
+wording experiments passed all 12 follow-up trials without changing graders.
+The evidence also includes token accounting, tool coverage, observed durations,
+and narrowly scoped policy-cost measurements.
 
 ## Implemented boundaries
 
@@ -200,6 +212,8 @@ concurrent retries, cancellation, and rollback on precommit failure.
 ## Project evidence and next milestone
 
 - [Implementation progress and remaining milestones](docs/progress.md)
+- [Remaining release work and effort estimate](docs/release-readiness.md)
+- [Runtime budget, coverage, and denial diagnostics](docs/runtime-diagnostics.md)
 - [Interactive operator console and browser security](docs/operator-ui.md)
 - [Operator console screenshots and verification](docs/evidence/operator-ui-2026-09-23/README.md)
 - [Complete live feasibility and failure analysis](docs/evidence/ten-task-live-2026-09-23/README.md)
@@ -212,6 +226,6 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: measure fresh local-model performance across the expanded tools, then grow
-and freeze the development/held-out benchmark. The portfolio release still
+Next: expand development tasks and attack coverage, add resumable benchmark
+execution, and freeze the held-out corpus before the release evaluation. The portfolio release still
 requires the full acceptance criteria in the architecture plan.

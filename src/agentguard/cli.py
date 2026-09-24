@@ -16,11 +16,13 @@ from agentguard.control_setup import (
     prepare_control,
 )
 from agentguard.control_smoke import run_control_smoke
+from agentguard.diagnostics import write_diagnostics
 from agentguard.doctor import inventory
 from agentguard.durable_demo import run_durable_demo
 from agentguard.live import prepare_local_model, run_live_smoke
 from agentguard.model import inference_environment
 from agentguard.model_setup import fetch_models, serve_command
+from agentguard.policy_benchmark import write_policy_benchmark
 from agentguard.replay import run_replay
 from agentguard.sandbox_setup import build_images, smoke
 from agentguard.storage import LeaseLost
@@ -143,6 +145,35 @@ def eval_analyze(
     typer.echo(f"Analysis: {result / 'analysis.md'}")
     typer.echo(f"Standalone viewer: {result / 'explorer.html'}")
     typer.echo((result / "analysis.md").read_text())
+
+
+@app.command()
+def eval_diagnostics(
+    run_directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[Path, typer.Option()],
+) -> None:
+    """Verify evidence and reconcile runtime budgets, tool coverage, and denial outcomes."""
+    try:
+        result = write_diagnostics(run_directory, output)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        raise typer.BadParameter(f"Unusable runtime evidence: {exc}") from exc
+    typer.echo(f"Diagnostics: {result / 'diagnostics.md'}")
+    typer.echo((result / "diagnostics.md").read_text())
+
+
+@app.command()
+def policy_benchmark(
+    output: Annotated[Path, typer.Option()],
+    suite: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "scenarios/dev/tools-v1.json"
+    ),
+    samples: Annotated[int, typer.Option(min=100, max=100000)] = 1000,
+) -> None:
+    """Measure deterministic policy and hashing; exclude persistence, tools, and inference."""
+    directory = write_policy_benchmark(suite, output, samples=samples)
+    result = json.loads((directory / "policy-benchmark.json").read_text())
+    typer.echo(f"Pure-policy milliseconds: {json.dumps(result['milliseconds'])}")
+    typer.echo(f"Report: {directory / 'policy-benchmark.json'}")
 
 
 @app.command()
