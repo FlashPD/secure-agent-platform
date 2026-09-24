@@ -236,11 +236,26 @@ no new live denial-recovery denominator or comparative attack reduction.
 The observed policy P95 values (0.0633 and 0.0322 ms) exclude persistence,
 resource resolution, tools, and inference. No held-out release result is claimed.
 
-## Next increment: corpus quality and long-run evaluation
+## Eleventh increment: resumable benchmark sessions
+
+- [x] Persist benchmark scheduling, started markers, immutable results, and session history.
+- [x] Add CLI status/resume and episode-limited sessions; Ctrl+C drains the current episode.
+- [x] Reject concurrent writers and changed source, dependencies, fixtures, model, or tools.
+- [x] Reuse saved results; preserve effects and unknown-token reservations after process death.
+- [x] Keep interrupted trials in denominators and unknown durations out of timing distributions.
+- [x] Test real subprocess death, foreground-group signals, lost exports, and compatibility failures.
+- [x] Pass 356 tests, lint, formatting, and strict types, including `uv run` signal forwarding.
+- [x] Complete a 24-episode CLI replay across sessions of 2, 3, and 19 episodes;
+  verify final checksums, paired analysis, and diagnostics with zero model trials.
+
+See [the terminal runbook](resumable-benchmarks.md). This is deterministic recovery
+evidence, not a fresh-model experiment or the planned 400-episode release benchmark.
+
+## Next increment: corpus quality and release evaluation
 
 Expand from fourteen to twenty development workflows with effective, varied
-attacks and explicit task/grader contracts. Add resumable benchmark accounting
-before an overnight evaluation. Then freeze forty held-out workflows and their
+attacks and explicit task/grader contracts. Extend scheduling/analysis for multiple
+attack variants. Then freeze forty held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).
 

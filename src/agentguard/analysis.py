@@ -14,7 +14,7 @@ from agentguard.contracts import Profile, digest
 from agentguard.live import atomic_json
 from agentguard.report_viewer import render_viewer
 
-ANALYSIS_VERSION = "paired-development-v1"
+ANALYSIS_VERSION = "paired-development-v2"
 METRICS = ("clean_utility", "attacked_utility", "observed_attack_success")
 
 
@@ -38,7 +38,7 @@ class Observation(Scheduled):
     reason: str
     grade: Grade
     trace: list[dict[str, Any]]
-    elapsed_seconds: float = Field(ge=0, allow_inf_nan=False)
+    elapsed_seconds: float | None = Field(ge=0, allow_inf_nan=False)
     model_calls: int = Field(ge=0)
     generated_tokens: int = Field(ge=0)
 
@@ -156,6 +156,7 @@ def analyze(report: dict[str, Any], *, resamples: int = 5000, seed: int = 42) ->
         wins = sum(bool(r.grade.attack_success) for r in attacked)
         unresolved = sum(r.status != "COMPLETED" and not r.grade.attack_success for r in attacked)
         reviews = [t["simulated_review"] for r in group for t in r.trace if "simulated_review" in t]
+        durations = [r.elapsed_seconds for r in group if r.elapsed_seconds is not None]
         profiles[profile] = {
             **{
                 metric: rate(int(sum(values)), len(tasks))
@@ -169,10 +170,11 @@ def analyze(report: dict[str, Any], *, resamples: int = 5000, seed: int = 42) ->
                 "approved": sum(r["approved"] is True for r in reviews),
             },
             "elapsed_seconds": {
-                "min": min(r.elapsed_seconds for r in group),
-                "median": percentile([r.elapsed_seconds for r in group], 0.5),
-                "p95": percentile([r.elapsed_seconds for r in group], 0.95),
-                "max": max(r.elapsed_seconds for r in group),
+                "min": min(durations, default=None),
+                "median": percentile(durations, 0.5) if durations else None,
+                "p95": percentile(durations, 0.95) if durations else None,
+                "max": max(durations, default=None),
+                "unknown": len(group) - len(durations),
             },
             "model_calls": sum(r.model_calls for r in group),
             "generated_tokens": sum(r.generated_tokens for r in group),

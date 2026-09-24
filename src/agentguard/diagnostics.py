@@ -14,7 +14,7 @@ from agentguard.live import atomic_json
 from agentguard.model import ModelFailure, parse_reply
 from agentguard.runtime import Budgets
 
-DIAGNOSTICS_VERSION = "runtime-diagnostics-v1"
+DIAGNOSTICS_VERSION = "runtime-diagnostics-v2"
 
 
 class SavedCall(BaseModel):
@@ -208,7 +208,10 @@ def diagnose(report: dict[str, Any], raw_calls: list[dict[str, Any]]) -> dict[st
         "reported_completion_tokens": distribution(measured_completion),
         "reported_context_headroom_tokens": distribution(measured_headroom),
         "model_call_seconds": distribution(measured_latency),
-        "episode_seconds": distribution([row.elapsed_seconds for row in rows]),
+        "episode_seconds": distribution(
+            [row.elapsed_seconds for row in rows if row.elapsed_seconds is not None]
+        ),
+        "unknown_episode_durations": sum(row.elapsed_seconds is None for row in rows),
         "status_counts": dict(Counter(row.status for row in rows)),
         "reason_counts": dict(Counter(row.reason for row in rows)),
         "tool_coverage": tool_counts,
@@ -239,6 +242,8 @@ def markdown(result: dict[str, Any]) -> str:
         f"usage unknown: {totals['usage_unknown_calls']}.",
         f"Reported generated tokens: {totals['generated_tokens']}; "
         f"reserved allowance for unknown usage: {totals['reserved_tokens']}.",
+        f"Episodes with unknown duration: {result['unknown_episode_durations']} "
+        "(excluded from timing distributions).",
         "",
         "| Profile | Episodes with denial | Task success among them | "
         "Later allowed action and task success |",

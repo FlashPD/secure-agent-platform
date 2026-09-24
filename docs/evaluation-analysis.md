@@ -36,9 +36,11 @@ Each scheduled episode must have exactly one result with the same episode ID,
 task, profile, and input type. The current schema requires one clean and one
 attacked episode per task and profile. Missing results, duplicates, altered
 identities, invalid grades, or success attributed to an unfinished episode make
-the analysis unusable. The CLI exits nonzero and writes no analysis. A killed
-benchmark still needs recovery/report reconstruction; this command does not
-invent missing grades or resume inference. Multi-payload/repetition suites will
+the analysis unusable. The CLI exits nonzero and writes no analysis. Use
+`eval-resume` to account for interruptions and finish the original schedule before
+analysis; this command does not invent missing grades or resume inference.
+Interrupted duration is null and excluded from timing summaries, with the unknown
+count retained. Multi-payload/repetition suites will
 need a new observation schema before they can use this analyzer.
 
 All counts are recalculated from episode observations, independently of the

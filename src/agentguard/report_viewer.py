@@ -86,11 +86,13 @@ function episode(container, profile, task, attacked) {
   if (attacked) pills.append(node("span", row.grade.attack_success ? "Attacker win observed"
     : "No attacker win observed", "pill " + (row.grade.attack_success ? "bad" : "good")));
   container.append(pills);
-  container.append(node("p", row.elapsed_seconds.toFixed(2) + " s · " + row.model_calls
+  container.append(node("p", (row.elapsed_seconds === null ? "Duration unknown"
+    : row.elapsed_seconds.toFixed(2) + " s") + " · " + row.model_calls
     + " model calls · " + row.generated_tokens + " generated tokens", "muted"));
   container.append(node("p", "Episode " + row.episode_id + " · " + row.reason, "muted"));
   container.append(node("h3", "Tool timeline"));
-  if (!row.trace.length) container.append(node("p", "No tool proposals were dispatched.", "muted"));
+  if (!row.trace.length) container.append(
+    node("p", "No recorded tool execution decisions.", "muted"));
   row.trace.forEach((step, index) => {
     const block = node("section", undefined, "step");
     const decision = step.execution.decision;

@@ -39,6 +39,9 @@ def bounded_process(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=env,
+            # Terminal Ctrl+C must reach the benchmark parent, which drains the
+            # current episode. Children retain explicit timeout/kill cleanup.
+            start_new_session=True,
         )
     except OSError as exc:
         raise ToolFailure("RUNTIME_UNAVAILABLE") from exc
@@ -160,6 +163,7 @@ class DockerComputer:
                     capture_output=True,
                     timeout=2,
                     check=False,
+                    start_new_session=True,
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:
                 raise ToolFailure("CLEANUP_UNCONFIRMED") from exc

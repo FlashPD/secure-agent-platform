@@ -23,6 +23,11 @@ These checks detect inconsistent evidence, not malicious modification by an owne
 who can rewrite the evidence and its checksums. Response usage is reported by the
 local server, not independently measured GPU work.
 
+An abruptly interrupted benchmark episode may have unknown (`null`) elapsed time.
+It remains in all outcome denominators but is excluded from duration distributions;
+`unknown_episode_durations` reports this missing measurement. Available calls and
+reserved allowances are reconciled exactly as for other episodes.
+
 ## What the report measures
 
 The report includes per-episode and aggregate prompt/output token counts, reserved

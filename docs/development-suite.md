@@ -1,10 +1,11 @@
 # Development suite
 
-The ten-task suite exercises the two implemented tools, `documents.read` and
+The original ten-task suite exercises `documents.read` and
 `tickets.create`. It covers task scope, actor ACLs, read-only summaries,
 multi-document synthesis, two-ticket batches, reviewed writes, confidential-data
-rules, unauthorized reads, and missing resources. It does not yet cover search,
-ticket listing/update, or share requests from the architecture plan.
+rules, unauthorized reads, and missing resources. The expanded fourteen-task
+`suite-v3.json` also exercises search, ticket listing/update, and share requests;
+see [the six-tool workflows](tool-surface.md).
 
 ## Run the suite
 
@@ -34,6 +35,13 @@ M1; the 300-second per-episode bound permits roughly five hours for the complete
 schedule, plus setup and reporting. This command has no paid-provider fallback.
 The CLI prints the artifact directory before execution and reports progress after
 each episode is saved in `episodes.json`.
+
+Use `--max-episodes N` for a bounded session, or press Ctrl+C once to pause after
+the current episode. `agentguard eval-resume <run-directory>` continues the saved
+schedule; `agentguard eval-status <run-directory>` inspects it without inference.
+See [resumable benchmarks](resumable-benchmarks.md) for exact interruption,
+compatibility, and accounting rules. The CLI rejects an unavailable model during
+preflight before creating a run; failures after scheduling remain counted.
 
 To check approval waits instead of automatic benchmark reviews:
 
@@ -94,9 +102,10 @@ Each UUID directory under `artifacts/suites/` contains:
 
 Failed and waiting episodes remain in the scheduled counts. Noncompleted attacked
 episodes without an observed win contribute to the reported worst-case attack
-wins. If the benchmark process itself is killed, its persisted schedule and
-incremental episode file identify unfinished work; automatic resume and final
-report reconstruction are not implemented yet.
+wins. New runs have a persistent benchmark journal. Resume retains completed
+results, records an abruptly interrupted active trial as failed unless its final
+runtime result was saved, and continues unstarted work. Reports are finalized
+only after every scheduled episode is accounted for.
 
 Analyze a completed run without a model or Docker:
 

@@ -15,7 +15,7 @@ velocity. Model failures and corpus authoring are the main uncertainties.
 |---|---|---:|
 | Expanded live feasibility | All 24 original new-tool trials accounted for; budgets, failures, and denial outcomes published; wording follow-ups kept separate | Completed this increment |
 | Corpus and split | 20 development and 40 held-out tasks, four attacks per held-out task, workflow-family separation, provenance, and freeze manifest | 4–6 |
-| Release evaluation and gates | Resumable long-run accounting; all 400 required episodes; paired task-cluster intervals, ablation, compatibility checks, explicit gate result | 2–3 |
+| Release evaluation and gates | All 400 required episodes; multi-payload paired task-cluster intervals, ablation, comparison compatibility checks, explicit gate result | 2–3 |
 | Reliability evidence | Remaining cancellation, artifact-quota, model-failure, orphan-container, telemetry, policy-latency, and public-network checks implemented or explicitly scoped with acceptance consequences | 2–3 |
 | Portfolio packaging | Model/system card, architecture decisions, clean-checkout reproduction, sanitized evidence, five-minute recording, and final reviewer walkthrough | 1–2 |
 
@@ -28,6 +28,10 @@ run took 54 minutes for 24 episodes (mean about 135 seconds). A simple linear
 projection gives about 15 hours for 400 episodes before setup/recovery; held-out
 workflows and additional attacks may take longer. This is scheduling guidance,
 not a throughput guarantee.
+
+Resumable benchmark sessions are now implemented and covered by deterministic
+crash/signal tests; see [the runbook](resumable-benchmarks.md). The estimate above
+predates that increment and has not been re-estimated. A full held-out run remains pending.
 
 The RTX 5080 inference profile, repeated multi-seed release trials, external
 AgentDojo adapter, hosted deployment, and optional telemetry dashboards are not
@@ -59,9 +63,10 @@ stronger OS process separation must not be presented as implemented.
   treatment before claiming full grammar coverage.
 - False-block annotations, approval burden, state/task disruption, and infrastructure
   failure counts. A denied action alone is not evidence of complete protection.
-- Long-run recovery. The application worker is durable; the synchronous evaluation
-  command records incremental progress but does not automatically resume a killed
-  benchmark. This gap matters before scheduling hundreds of serial episodes.
+- Fresh-model long-run recovery evidence. The benchmark now supports safe pauses,
+  bounded sessions, and explicit resume with immutable results and conservative
+  interrupted-trial accounting. Its process-death and signal tests use authored
+  replay/model doubles; measured inference across resumed sessions remains pending.
 - A measured public-network audit after downloads, bounded artifact storage,
   cancellation during computation,
   and cleanup after supervisor interruption. Existing container network denial

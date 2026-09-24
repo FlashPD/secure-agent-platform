@@ -10,6 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from agentguard import benchmark
 from agentguard.computation import Computer, ToolFailure
 from agentguard.contracts import Profile, digest
 from agentguard.live import atomic_json
@@ -26,6 +27,7 @@ from agentguard.runtime import (
 )
 from agentguard.scenarios import (
     GRADER_VERSION,
+    DevelopmentTask,
     Script,
     episode_documents,
     grade_episode,
@@ -112,7 +114,11 @@ def run_suite(
     model: LocalModel | None = None,
     model_evidence: dict[str, Any] | None = None,
     progress: Callable[[Path, int, int], None] | None = None,
+    stop_requested: Callable[[], bool] | None = None,
+    max_episodes: int | None = None,
 ) -> Path:
+    if max_episodes is not None and max_episodes < 1:
+        raise ValueError("Session episode limit must be positive")
     if not variants or len(set(variants)) != len(variants) or not set(variants) <= set(VARIANTS):
         raise ValueError("Select unique known benchmark variants")
     if model is not None and (computer is None or computer.mode != "docker_isolated"):
@@ -167,6 +173,9 @@ def run_suite(
                 )
     manifest = {
         "schema_version": 1,
+        "benchmark_journal_version": 1,
+        "suite_file": str((fixture_root / suite_path.name).relative_to(run_dir)),
+        "environment": benchmark.environment(),
         "suite_id": suite.id,
         "split": suite.split,
         "hardware": {"os": platform.system(), "architecture": platform.machine()},
@@ -184,7 +193,9 @@ def run_suite(
         "variants": variants,
         "containment": store.computer.mode,
         "tool_image_id": getattr(store.computer, "image_id", None),
+        "tool_timeout": getattr(store.computer, "timeout", None),
         "model": model_evidence,
+        "model_config": model.config.model_dump(mode="json") if model else None,
         "budgets": budgets.model_dump(),
         "policy_version": POLICY_VERSION,
         "grader_version": GRADER_VERSION,
@@ -195,15 +206,124 @@ def run_suite(
         "reviewer_version": REVIEWER_VERSION if simulate_approvals else None,
     }
     atomic_json(run_dir / "manifest.json", manifest)
+    with benchmark.exclusive_run(run_dir):
+        benchmark.initialize(store, manifest)
+        _continue_suite(
+            run_dir,
+            store,
+            manifest,
+            tasks,
+            model=model,
+            progress=progress,
+            stop_requested=stop_requested,
+            max_episodes=max_episodes,
+        )
+    return run_dir
+
+
+def resume_suite(
+    run_dir: Path,
+    *,
+    computer: Computer | None = None,
+    model: LocalModel | None = None,
+    model_evidence: dict[str, Any] | None = None,
+    progress: Callable[[Path, int, int], None] | None = None,
+    stop_requested: Callable[[], bool] | None = None,
+    max_episodes: int | None = None,
+) -> Path:
+    if max_episodes is not None and max_episodes < 1:
+        raise ValueError("Session episode limit must be positive")
+    with benchmark.exclusive_run(run_dir):
+        manifest = json.loads((run_dir / "manifest.json").read_text())
+        suite_path = benchmark.verify_files(run_dir, manifest)
+        _, fixtures = load_suite(suite_path)
+        if not (run_dir / "state.sqlite3").is_file():
+            raise ValueError("Benchmark state database is missing")
+        store = Store(run_dir / "state.sqlite3", computer=computer)
+        expected = (
+            manifest["fresh_inference"],
+            manifest["model"],
+            manifest["model_config"],
+            manifest["containment"],
+            manifest["tool_image_id"],
+            manifest["tool_timeout"],
+        )
+        actual = (
+            model is not None,
+            model_evidence,
+            model.config.model_dump(mode="json") if model else None,
+            store.computer.mode,
+            getattr(store.computer, "image_id", None),
+            getattr(store.computer, "timeout", None),
+        )
+        if expected != actual:
+            raise ValueError("Resume requires the original model, settings, and tool backend")
+        _continue_suite(
+            run_dir,
+            store,
+            manifest,
+            {task.id: task for _, _, task in fixtures},
+            model=model,
+            progress=progress,
+            stop_requested=stop_requested,
+            max_episodes=max_episodes,
+        )
+    return run_dir
+
+
+def _continue_suite(
+    run_dir: Path,
+    store: Store,
+    manifest: dict[str, Any],
+    tasks: dict[str, DevelopmentTask],
+    *,
+    model: LocalModel | None,
+    progress: Callable[[Path, int, int], None] | None,
+    stop_requested: Callable[[], bool] | None,
+    max_episodes: int | None,
+) -> None:
+    schedule = manifest["schedule"]
+    budgets = Budgets.model_validate(manifest["budgets"])
+    rows = benchmark.recorded(store, manifest)
+    # Completed evidence is immutable; a redundant resume is a no-op.
+    if len(rows) == len(schedule) and (run_dir / "checksums.json").is_file():
+        from agentguard.analysis import checked_report
+
+        checked_report(run_dir)
+        if progress is not None:
+            progress(run_dir, len(rows), len(schedule))
+        return
+    atomic_json(run_dir / "episodes.json", rows)
+    session = benchmark.start_session(store, len(rows))
+    initial_count = len(rows)
     if progress is not None:
-        progress(run_dir, 0, len(schedule))
-    rows: list[dict[str, Any]] = []
-    for scheduled in schedule:
+        progress(run_dir, len(rows), len(schedule))
+    for scheduled in schedule[len(rows) :]:
+        if (stop_requested is not None and stop_requested()) or (
+            max_episodes is not None and len(rows) - initial_count >= max_episodes
+        ):
+            break
         task = tasks[scheduled["task_id"]]
         reviewer = (
-            ExactActionReviewer(task.contract, task.review_contract) if simulate_approvals else None
+            ExactActionReviewer(task.contract, task.review_contract)
+            if manifest["simulated_approvals"]
+            else None
         )
-        if model is not None:
+        with store.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            entry = db.execute(
+                "SELECT started_at FROM benchmark_episodes WHERE episode_id=?",
+                (scheduled["episode_id"],),
+            ).fetchone()
+            interrupted = entry["started_at"] is not None
+            if not interrupted:
+                db.execute(
+                    "UPDATE benchmark_episodes SET started_at=? WHERE episode_id=?",
+                    (time.time(), scheduled["episode_id"]),
+                )
+        if interrupted:
+            result = benchmark.interrupted_result(store, scheduled, task, budgets)
+        elif model is not None:
             result = Runtime(store, model, budgets, reviewer=reviewer).run(
                 scheduled["episode_id"], task.task
             )
@@ -221,7 +341,7 @@ def run_suite(
             task.expectation,
             attacked=scheduled["attacked"],
         )
-        rows.append(
+        row = (
             scheduled
             | result
             | {
@@ -232,12 +352,34 @@ def run_suite(
                 }
             }
         )
+        benchmark.save_result(store, row)
+        rows.append(row)
         atomic_json(run_dir / "episodes.json", rows)
         if progress is not None:
             progress(run_dir, len(rows), len(schedule))
-    report = {"manifest": manifest, "counts": summarize(rows, variants), "episodes": rows}
+    complete = len(rows) == len(schedule)
+    benchmark.end_session(store, session, len(rows), "COMPLETED" if complete else "PAUSED")
+    state = benchmark.status(run_dir)
+    atomic_json(run_dir / "progress.json", state)
+    if not complete:
+        return
+    _export_suite(run_dir, store, manifest, rows)
+
+
+def _export_suite(
+    run_dir: Path, store: Store, manifest: dict[str, Any], rows: list[dict[str, Any]]
+) -> None:
+    report = {
+        "manifest": manifest,
+        "counts": summarize(rows, tuple(manifest["variants"])),
+        "episodes": rows,
+    }
     atomic_json(run_dir / "report.json", report)
-    label = "Live development suite" if model else "Scripted suite replay — no model inference"
+    label = (
+        "Live development suite"
+        if manifest["fresh_inference"]
+        else "Scripted suite replay — no model inference"
+    )
     lines = [
         f"# {label}",
         "",
@@ -254,10 +396,12 @@ def run_suite(
         )
     lines += [
         "",
-        f"Scheduled: {len(schedule)}. Accounted for: {len(rows)}.",
-        f"Simulated approvals enabled: {simulate_approvals}.",
+        f"Scheduled: {len(manifest['schedule'])}. Accounted for: {len(rows)}.",
+        f"Simulated approvals enabled: {manifest['simulated_approvals']}.",
+        "Session and interruption history: progress.json. Interrupted episodes retain their "
+        "effects and token reservations; unknown elapsed time is null.",
         "Authored replay is contract/grader evidence, not measured model utility or security."
-        if model is None
+        if not manifest["fresh_inference"]
         else "Fresh local inference; all failures remain in denominators.",
         "",
     ]
@@ -275,4 +419,3 @@ def run_suite(
             if p.is_file() and (p.suffix in (".json", ".md") or p.name == "evidence.sqlite3")
         },
     )
-    return run_dir

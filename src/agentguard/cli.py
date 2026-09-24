@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import subprocess
 import time
 from pathlib import Path
@@ -6,6 +7,7 @@ from typing import Annotated, cast
 
 import typer
 
+from agentguard import benchmark
 from agentguard.analysis import write_analysis
 from agentguard.api import create_app
 from agentguard.contracts import Profile
@@ -26,7 +28,7 @@ from agentguard.policy_benchmark import write_policy_benchmark
 from agentguard.replay import run_replay
 from agentguard.sandbox_setup import build_images, smoke
 from agentguard.storage import LeaseLost
-from agentguard.suite import VARIANTS, run_suite
+from agentguard.suite import VARIANTS, resume_suite, run_suite
 from agentguard.supervisor import DockerComputer
 
 app = typer.Typer(
@@ -282,6 +284,7 @@ def eval_suite(
     ),
     sandbox_manifest: Annotated[Path | None, typer.Option(exists=True, dir_okay=False)] = None,
     output: Annotated[Path, typer.Option()] = Path("artifacts/suites"),
+    max_episodes: Annotated[int | None, typer.Option(min=1)] = None,
 ) -> None:
     """Run a synthetic development suite; default is authored replay, not model inference."""
     selected = tuple(v.strip() for v in variants.split(","))
@@ -290,26 +293,86 @@ def eval_suite(
     model, evidence = None, None
     if live:
         model, profile, server = prepare_local_model(Path.cwd(), model_profile)
+        if "preflight_error" in server:
+            raise typer.BadParameter("Start the pinned local model server before starting a suite")
         evidence = {"profile": profile, "server": server}
         sandbox_manifest = sandbox_manifest or Path("artifacts/sandbox/manifest.json")
     computer = DockerComputer.from_manifest(sandbox_manifest) if sandbox_manifest else None
 
-    def progress(directory: Path, completed: int, total: int) -> None:
-        if completed == 0:
-            typer.echo(f"Artifacts: {directory}")
-        typer.echo(f"Episodes recorded: {completed}/{total}")
+    with benchmark.graceful_stop(typer.echo) as stop:
+        result = run_suite(
+            suite,
+            output,
+            computer=computer,
+            variants=cast(tuple[Profile, ...], selected),
+            simulate_approvals=simulate_approvals,
+            model=model,
+            model_evidence=evidence,
+            progress=_suite_progress,
+            stop_requested=stop,
+            max_episodes=max_episodes,
+        )
+    _suite_output(result)
 
-    result = run_suite(
-        suite,
-        output,
-        computer=computer,
-        variants=cast(tuple[Profile, ...], selected),
-        simulate_approvals=simulate_approvals,
-        model=model,
-        model_evidence=evidence,
-        progress=progress,
-    )
+
+def _suite_progress(directory: Path, completed: int, total: int) -> None:
+    typer.echo(f"Artifacts: {directory} | Episodes recorded: {completed}/{total}")
+
+
+@app.command()
+def eval_status(directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)]) -> None:
+    """Inspect saved benchmark progress without starting inference or changing state."""
+    try:
+        typer.echo(json.dumps(benchmark.status(directory), indent=2))
+    except (ValueError, OSError, sqlite3.Error) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command()
+def eval_resume(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    model_profile: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "config/model-mac-small.json"
+    ),
+    sandbox_manifest: Annotated[Path | None, typer.Option(exists=True, dir_okay=False)] = None,
+    max_episodes: Annotated[int | None, typer.Option(min=1)] = None,
+) -> None:
+    """Continue an existing benchmark with its original schedule and settings."""
+    try:
+        manifest = json.loads((directory / "manifest.json").read_text())
+        benchmark.verify_files(directory, manifest)
+        model, evidence = None, None
+        if manifest["fresh_inference"]:
+            model, profile, server = prepare_local_model(Path.cwd(), model_profile)
+            if "preflight_error" in server:
+                raise ValueError("Start the pinned local model server before resuming")
+            evidence = {"profile": profile, "server": server}
+        if manifest["containment"] == "docker_isolated":
+            sandbox_manifest = sandbox_manifest or Path("artifacts/sandbox/manifest.json")
+        computer = DockerComputer.from_manifest(sandbox_manifest) if sandbox_manifest else None
+        with benchmark.graceful_stop(typer.echo) as stop:
+            result = resume_suite(
+                directory,
+                computer=computer,
+                model=model,
+                model_evidence=evidence,
+                progress=_suite_progress,
+                stop_requested=stop,
+                max_episodes=max_episodes,
+            )
+    except (ValueError, OSError, sqlite3.Error) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _suite_output(result)
+
+
+def _suite_output(result: Path) -> None:
+    state = benchmark.status(result)
+    live = state["mode"] == "fresh_local_inference"
     typer.echo("FRESH LOCAL INFERENCE" if live else "SCRIPTED REPLAY — 0 model trials")
+    if not state["complete"]:
+        typer.echo(f"PAUSED: {state['recorded']}/{state['scheduled']} episodes recorded.")
+        typer.echo(f"Resume: agentguard eval-resume {result}")
+        return
     typer.echo(f"Report: {result / 'report.md'}")
     report = json.loads((result / "report.json").read_text())
     typer.echo(json.dumps(report["counts"], indent=2))

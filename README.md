@@ -98,6 +98,13 @@ intervals for fresh inference. The viewer shows proposals, policy decisions, and
 independent grades side by side. It runs offline and displays untrusted content
 as text. See [the analysis contract and limits](docs/evaluation-analysis.md).
 
+Benchmarks can run directly from your terminal across multiple sessions. Add
+`--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
+Ctrl+C once to finish the current episode and pause. Continue with
+`uv run --locked agentguard eval-resume artifacts/suites/<run-id>` and inspect
+progress with `agentguard eval-status`. Keep the same code/model environment.
+See [pause, resume, and interruption accounting](docs/resumable-benchmarks.md).
+
 ## Run isolated tools
 
 Start Docker Desktop, then run:
@@ -226,6 +233,6 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: expand development tasks and attack coverage, add resumable benchmark
-execution, and freeze the held-out corpus before the release evaluation. The portfolio release still
+Next: expand development tasks and attack coverage, extend scheduling/analysis for
+four attacks per task, and freeze the held-out corpus before release evaluation. The portfolio release still
 requires the full acceptance criteria in the architecture plan.
