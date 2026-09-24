@@ -205,7 +205,17 @@ def test_exact_body_requirement_rejects_extra_text_independently_of_reviewer(sto
 
 
 def test_full_scripted_suite_preserves_denominators_provenance_and_backup(tmp_path):
-    root = run_suite(SUITE, tmp_path)
+    progress_counts = []
+
+    def progress(directory, completed, total):
+        assert total == 60
+        assert (directory / "manifest.json").is_file()
+        if completed:
+            assert len(json.loads((directory / "episodes.json").read_text())) == completed
+        progress_counts.append(completed)
+
+    root = run_suite(SUITE, tmp_path, progress=progress)
+    assert progress_counts == list(range(61))
     report = json.loads((root / "report.json").read_text())
     manifest = report["manifest"]
     assert manifest["scheduled_episodes"] == len(report["episodes"]) == 60

@@ -5,6 +5,7 @@ from typing import Annotated, cast
 
 import typer
 
+from agentguard.analysis import write_analysis
 from agentguard.contracts import Profile
 from agentguard.doctor import inventory
 from agentguard.live import prepare_local_model, run_live_smoke
@@ -18,6 +19,23 @@ from agentguard.supervisor import DockerComputer
 app = typer.Typer(
     no_args_is_help=True, help="Agent authorization laboratory. Replay is not live inference."
 )
+
+
+@app.command()
+def eval_analyze(
+    run_directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[Path, typer.Option()],
+    resamples: Annotated[int, typer.Option(min=100, max=100000)] = 5000,
+    seed: Annotated[int, typer.Option()] = 42,
+) -> None:
+    """Verify a completed suite and export paired analysis without changing its evidence."""
+    try:
+        result = write_analysis(run_directory, output, resamples=resamples, seed=seed)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        raise typer.BadParameter(f"Unusable suite evidence: {exc}") from exc
+    typer.echo(f"Analysis: {result / 'analysis.md'}")
+    typer.echo(f"Standalone viewer: {result / 'explorer.html'}")
+    typer.echo((result / "analysis.md").read_text())
 
 
 @app.command()
@@ -137,6 +155,12 @@ def eval_suite(
         evidence = {"profile": profile, "server": server}
         sandbox_manifest = sandbox_manifest or Path("artifacts/sandbox/manifest.json")
     computer = DockerComputer.from_manifest(sandbox_manifest) if sandbox_manifest else None
+
+    def progress(directory: Path, completed: int, total: int) -> None:
+        if completed == 0:
+            typer.echo(f"Artifacts: {directory}")
+        typer.echo(f"Episodes recorded: {completed}/{total}")
+
     result = run_suite(
         suite,
         output,
@@ -145,6 +169,7 @@ def eval_suite(
         simulate_approvals=simulate_approvals,
         model=model,
         model_evidence=evidence,
+        progress=progress,
     )
     typer.echo("FRESH LOCAL INFERENCE" if live else "SCRIPTED REPLAY — 0 model trials")
     typer.echo(f"Report: {result / 'report.md'}")

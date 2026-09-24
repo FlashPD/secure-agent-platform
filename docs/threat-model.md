@@ -4,7 +4,8 @@ This increment executes two fixed operations over synthetic state. The local
 replay uses trusted Python; the isolated replay sends bounded JSON to a fixed
 container entrypoint. The live loop uses the same isolated tools with a native
 local model. No mode accepts model-authored code or shell commands.
-There is no business-service HTTP API or browser UI yet.
+There is no business-service HTTP API or authenticated approval UI yet. Completed
+suite reports can be inspected in a standalone, read-only browser viewer.
 
 Trusted inputs are the fixture contract, resource metadata/ACLs, policy code,
 selected experiment profile, operator review, and grader predicates. Document
@@ -16,8 +17,8 @@ The defended profile enforces actor permissions and per-task scope. Reading a
 confidential document marks the episode confidential. Subsequent internal writes
 require review; shared writes are denied. Shared writes without confidential reads
 also require review. Baseline/prompt-only profiles deliberately disable these
-business checks inside a synthetic episode. The live smoke compares all three
-profiles on one development task; it cannot establish benchmark-level protection.
+business checks inside a synthetic episode. Live evidence now compares all three
+profiles on ten development tasks; it cannot establish held-out or general attack protection.
 
 SQLite `BEGIN IMMEDIATE` serializes preparation and effect application separately.
 Computation runs between transactions, without holding the write lock. Resource
@@ -67,7 +68,16 @@ No microVM-grade isolation or resistance to kernel/container-engine exploits is
 claimed. A malicious operator, compromised host, and modified trusted images are
 outside this lab's boundary. Docker's configured engine/context is trusted.
 
+The offline analyzer verifies checksums and schedule/result identity before
+exporting comparisons. Checksum verification detects inconsistent evidence; it
+does not authenticate evidence against a malicious host owner. The standalone
+viewer escapes embedded JSON delimiters and writes document/model content only
+through DOM text APIs. Its content security policy limits executable code and
+styles to the bundled hashes and denies network connections. It exposes no tool
+execution, approval, authentication, or service endpoint. These checks do not
+establish CSRF protection or credential separation for the future application.
+
 Not implemented: durable worker leases/fencing and resume, immediate in-flight
-cancellation, model-failure retries, web security, or hosted multi-tenancy.
+cancellation, model-failure retries, authenticated application security, or hosted multi-tenancy.
 Do not expose this package as a remote business service. The local inference
 server has no business credentials; its built-in agent tools and browser UI are disabled.

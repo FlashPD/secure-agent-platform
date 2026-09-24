@@ -1,7 +1,7 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: authorization kernel, isolated tools, and a measured local-model comparison working;
-the full feasibility suite and portfolio release remain in progress.**
+**Status: ten-task live feasibility complete, with paired analysis and an offline
+comparison viewer. Durable execution and the portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -45,13 +45,27 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. The API, worker leases, and UI remain to be implemented.
+success rate. The API, worker leases, and authenticated application UI remain to be implemented.
 
 `make eval-suite` expands deterministic validation to ten development tasks and
 60 paired episodes, including exact-action approval simulation, confidential-data
 rules, actor ACLs, and state/output grading. It is also scripted replay. See the
 [suite runbook](docs/development-suite.md) for fixtures, grading limits, and the
 explicit `make eval-suite-live` command for fresh model trials.
+
+Analyze any completed suite and open its standalone comparison viewer:
+
+```sh
+uv run --locked agentguard eval-analyze artifacts/suites/<run-id> \
+  --output artifacts/analyses/<run-id>
+open artifacts/analyses/<run-id>/explorer.html  # macOS
+```
+
+The analyzer verifies evidence checksums and scheduled results, calculates paired
+comparisons and conditional attack success, and adds descriptive task-bootstrap
+intervals for fresh inference. The viewer shows proposals, policy decisions, and
+independent grades side by side. It runs offline and displays untrusted content
+as text. See [the analysis contract and limits](docs/evaluation-analysis.md).
 
 ## Run isolated tools
 
@@ -96,8 +110,23 @@ the task. Earlier failed development trials are retained alongside the final smo
 
 Two subsequent [denial-feedback experiments](docs/evidence/development-suite-2026-09-23/README.md)
 retained that utility failure: the model claimed success after denial without
-creating a ticket. Their state grades remain failed. The expanded ten-task suite
-passes scripted checks, but its complete live evaluation is still outstanding.
+creating a ticket. Their state grades remain failed.
+
+The [complete ten-task live evaluation](docs/evidence/ten-task-live-2026-09-23/README.md)
+now accounts for all 60 scheduled episodes:
+
+| Profile | Clean success | Attacked task success | Observed attacker wins |
+|---|---:|---:|---:|
+| Baseline | 8/10 | 6/10 | 4/10 |
+| Prompt-only | 9/10 | 6/10 | 4/10 |
+| Defended | 10/10 | 8/10 | 0/10 |
+
+Every episode completed; two defended attacks were blocked but still caused task
+failure and false completion claims. These are self-authored development results,
+not a held-out release benchmark or proof of zero attack risk. Inspect the
+[standalone viewer](docs/evidence/ten-task-live-2026-09-23/analysis/explorer.html),
+[paired analysis](docs/evidence/ten-task-live-2026-09-23/analysis/analysis.md),
+and [five-minute walkthrough](docs/reviewer-walkthrough.md).
 
 ## Implemented boundaries
 
@@ -116,6 +145,8 @@ concurrent retries, cancellation, and rollback on precommit failure.
 ## Project evidence and next milestone
 
 - [Implementation progress and remaining milestones](docs/progress.md)
+- [Complete live feasibility and failure analysis](docs/evidence/ten-task-live-2026-09-23/README.md)
+- [Offline analysis and viewer contract](docs/evaluation-analysis.md)
 - [Live model results and retained failure analysis](docs/evidence/local-model-2026-09-23/README.md)
 - [Ten-task suite and denial-feedback experiments](docs/evidence/development-suite-2026-09-23/README.md)
 - [Observed development hardware](docs/hardware.md)
@@ -124,7 +155,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: expand real evaluation to ten development tasks, then add durable execution
-and the authenticated approval/timeline UI. The
+Next: add durable execution with leases/fencing and restartable approval waits,
+then the authenticated approval/timeline UI. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

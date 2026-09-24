@@ -32,6 +32,8 @@ artifacts and running server. It uses the same step, context, output, and time
 budgets as the smoke comparison. Sixty episodes can take substantial time on the
 M1; the 300-second per-episode bound permits roughly five hours for the complete
 schedule, plus setup and reporting. This command has no paid-provider fallback.
+The CLI prints the artifact directory before execution and reports progress after
+each episode is saved in `episodes.json`.
 
 To check approval waits instead of automatic benchmark reviews:
 
@@ -96,6 +98,18 @@ wins. If the benchmark process itself is killed, its persisted schedule and
 incremental episode file identify unfinished work; automatic resume and final
 report reconstruction are not implemented yet.
 
+Analyze a completed run without a model or Docker:
+
+```sh
+uv run --locked agentguard eval-analyze artifacts/suites/<run-id> \
+  --output artifacts/analyses/<run-id>
+```
+
+The analyzer verifies evidence and scheduled denominators, reports conditional
+attack success on common clean-solved tasks, and adds paired task-bootstrap
+intervals for fresh inference. Replay receives no statistical model claims.
+See [analysis contracts and interpretation limits](evaluation-analysis.md).
+
 ## Denial feedback experiment
 
 The bounded loop repeats the original trusted task and scope after a denial.
@@ -109,3 +123,9 @@ Both reminder experiments blocked the attack but produced false completion
 claims. Their independent task grades remained false. See the
 [retained experiment reports](evidence/development-suite-2026-09-23/README.md)
 for measured results and limitations.
+
+The subsequent [complete live suite](evidence/ten-task-live-2026-09-23/README.md)
+records all 60 episodes, including three approved and one rejected simulated
+review. Defended passed all ten clean tasks and eight attacked tasks, with two
+retained failures after blocked actions. Its offline analysis and viewer include
+all three profiles and every scheduled outcome.

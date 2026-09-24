@@ -90,23 +90,47 @@ success without creating a ticket. All twelve new live episodes are retained;
 no failed episode was removed or regraded. All six clean trials passed, and both
 defended attacked trials blocked the write but failed task utility.
 
-## Next increment: finish Phase 0 feasibility
+## Fifth increment: complete live feasibility and inspectable analysis
 
-1. Run the full ten-task suite with fresh local inference and isolated tools,
-   including exact-action simulated approvals and all three profiles.
-2. Use its failure cases to assess model suitability, recovery, clean utility,
-   latency, and memory before selecting the release model profile.
-3. Extend coverage to the remaining four planned tools during platform work.
+- [x] Complete all 60 fresh local-model episodes with isolated tools and simulated review.
+- [x] Publish every result: clean utility 8/10 baseline, 9/10 prompt-only, 10/10 defended;
+  attacked utility 6/10, 6/10, 8/10; observed attack wins 4/10, 4/10, 0/10.
+- [x] Retain both defended recovery failures and false completion claims; no regrading.
+- [x] Measure 185 model calls, 5,939 generated tokens, zero schema repairs, and no
+  unfinished episodes. Observe 27.00–75.89 s per episode and about 3.59 GiB native
+  server command maximum RSS under uncontrolled host load.
+- [x] Add checksum/schedule-validated offline analysis, common-clean conditional
+  denominators, paired task-bootstrap intervals, and overlapping failure labels.
+- [x] Export an offline comparison viewer with escaped untrusted text, restrictive
+  CSP, original tasks, tool decisions, simulated reviews, and independent grades.
+- [x] Verify all 60 replay selections in Chrome, mobile layout, and hostile-text handling.
+- [x] Add CLI progress after each saved episode and a five-minute reviewer walkthrough.
+- [x] Pass 179 tests, Ruff, formatting, and strict mypy checks.
 
-**Phase 0 has not passed:** the ten-task suite is authored and validated with
-scripted actions, but the full live feasibility run is outstanding. Only two of
-the six planned tools exist. No held-out suite has been authored or frozen.
+See [the complete live evidence and model decision](evidence/ten-task-live-2026-09-23/README.md).
+**Phase 0 feasibility is complete.** Retain the pinned `mac-small` profile for
+platform development, provisionally: it solves all ten clean tasks but still
+fails recovery after two blocked attacks. The release model choice remains open
+pending broader evidence. Only two of six planned tools exist; no held-out suite
+has been authored or frozen, and no portfolio release gate has passed.
+
+## Next increment: durable execution
+
+1. Implement transactional job claims, leases, heartbeats, and fencing tokens.
+2. Require the live lease on model checkpoints and effect commits; test stale workers.
+3. Resume persisted model responses with stable execution keys after interruption,
+   preserving budgets and preventing duplicate effects.
+4. Release leases on approval waits and resume safely after a persisted decision.
+5. Add fault-injection tests before exposing the authenticated control plane.
+
+Extend coverage to the remaining four planned tools during platform work. The
+static report viewer does not replace the authenticated application/approval UI.
 
 ## Later milestones
 
 The remaining work follows the architecture plan: durable queue/leases/fencing;
 all six tools; authenticated API and operator/worker credential separation;
-approval UI and execution timeline; paired live evaluation and uncertainty;
+approval UI and execution timeline; paired held-out evaluation and uncertainty;
 recovery/isolation checks; frozen held-out benchmark; portfolio recording and release.
 
 Do not treat the current effect transaction as proof of worker fencing, the trusted

@@ -50,3 +50,11 @@ foreground native server command reported maximum RSS of 3,852,435,456 bytes
 tree's maximum RSS, not whole-machine or Docker memory. Unrelated Postgres and
 TripML containers were stopped before this run. See the [raw observations and
 interpretation](evidence/local-model-2026-09-23/README.md).
+
+The subsequent [complete ten-task live suite](evidence/ten-task-live-2026-09-23/README.md)
+ran all 60 episodes on this Mac with the same pinned profile and isolated tools.
+Observed episode durations were 27.00–75.89 seconds (median 51.89 seconds); native
+server command maximum RSS was 3,852,910,592 bytes, about 3.59 GiB. Tests and browser
+checks ran concurrently during part of the session, so these are feasibility
+observations rather than controlled performance measurements. The server was
+stopped afterward, and Docker reported no running containers at cleanup.

@@ -6,6 +6,7 @@ import platform
 import sqlite3
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -110,6 +111,7 @@ def run_suite(
     simulate_approvals: bool = True,
     model: LocalModel | None = None,
     model_evidence: dict[str, Any] | None = None,
+    progress: Callable[[Path, int, int], None] | None = None,
 ) -> Path:
     if not variants or len(set(variants)) != len(variants) or not set(variants) <= set(VARIANTS):
         raise ValueError("Select unique known benchmark variants")
@@ -192,6 +194,8 @@ def run_suite(
         "reviewer_version": REVIEWER_VERSION if simulate_approvals else None,
     }
     atomic_json(run_dir / "manifest.json", manifest)
+    if progress is not None:
+        progress(run_dir, 0, len(schedule))
     rows: list[dict[str, Any]] = []
     for scheduled in schedule:
         task = tasks[scheduled["task_id"]]
@@ -228,6 +232,8 @@ def run_suite(
             }
         )
         atomic_json(run_dir / "episodes.json", rows)
+        if progress is not None:
+            progress(run_dir, len(rows), len(schedule))
     report = {"manifest": manifest, "counts": summarize(rows, variants), "episodes": rows}
     atomic_json(run_dir / "report.json", report)
     label = "Live development suite" if model else "Scripted suite replay — no model inference"
