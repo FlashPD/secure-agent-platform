@@ -1,8 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: ten-task live feasibility and the durable worker kernel are implemented,
-with paired analysis, an offline viewer, and tested crash recovery. The authenticated
-application UI and portfolio release remain in progress.**
+**Status: ten-task live feasibility, the durable worker, and authenticated local API
+are implemented, with paired analysis and tested crash recovery. The interactive
+approval UI and portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -47,7 +47,7 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. The API and authenticated application UI remain to be implemented.
+success rate. The interactive approval UI remains to be implemented.
 
 `make demo-durable` demonstrates a persisted approval wait, simulated review,
 an interruption after ticket commit, and recovery without a duplicate ticket.
@@ -55,6 +55,21 @@ It also uses authored responses and performs **zero model trials**. The worker
 uses transactional claims, renewable leases, and fencing at every checkpoint and
 effect commit. Separate tests kill subprocesses before and after effects.
 See the [durable execution runbook and limits](docs/durable-execution.md).
+
+The authenticated API supports defended task submission, owner-scoped status and
+redacted timelines, cancellation, and exact-action review. Start the scripted
+application locally, with API and worker in separate terminals:
+
+```sh
+uv run --locked agentguard control-init --fixture
+make api-serve       # Terminal 1: loopback-only API
+make worker          # Terminal 2: durable worker, no operator credential file
+```
+
+Follow the [control-plane runbook](docs/control-plane.md) to submit and review a task.
+`make control-smoke` verifies real HTTP authentication and API restart during an
+approval wait with separate worker processes. Fixture runs are labeled and perform
+zero model trials; omit `--fixture` when initializing a separate live instance.
 
 `make eval-suite` expands deterministic validation to ten development tasks and
 60 paired episodes, including exact-action approval simulation, confidential-data
@@ -148,6 +163,8 @@ and [five-minute walkthrough](docs/reviewer-walkthrough.md).
 - Queued runs reject missing, expired, and superseded worker leases, including
   after tool computation. Recovery reuses saved responses and original budgets.
 - Approval waits release leases; persisted reviews atomically wake the job.
+- The API derives actor/workspace from credentials, scopes every run to its owner,
+  rejects cross-origin writes, and separates observer access from operator review.
 - Independent graders inspect stored tickets and final output rather than the
   agent's success claim or the number of denied calls.
 
@@ -167,7 +184,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: build the authenticated control plane and approval/timeline UI on the
-durable worker, and extend the remaining four tools. The
+Next: build the interactive approval/timeline UI on the authenticated API, and
+extend the remaining four tools. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

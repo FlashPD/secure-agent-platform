@@ -4,6 +4,9 @@ The durable worker is a trusted library around the bounded runtime and transacti
 effect gateway. It supports ordinary defended episodes; unsafe benchmark profiles
 remain confined to the existing synchronous evaluation harness.
 
+The [authenticated local API](control-plane.md) now wraps this worker for task
+submission and operator review. The kernel contracts below remain library-level.
+
 ## Inspect the demonstration
 
 ```sh
@@ -99,7 +102,7 @@ known zero consumption. A new attempt requires a new episode.
 SQLite is local-disk WAL with a busy timeout. Persisted leases/deadlines use the
 trusted host wall clock; individual attempts also use a monotonic deadline. Large
 clock adjustments can change when a lease expires. This is a single-host laboratory,
-not a distributed clock or hostile-host design. `Store` migrates schemas 0–2 to 3
+not a distributed clock or hostile-host design. `Store` migrates schemas 0–3 to 4
 without modifying existing episode evidence and rejects unknown newer versions.
 
 ## Validation and remaining work
@@ -111,8 +114,9 @@ races, stale scope, cancellation, budget preservation, saved final answers, migr
 and the CLI demonstration. The tests run with the existing authorization and
 containment suite through `make check`; CI also runs `make demo-durable`.
 
-The worker still shares the trusted process/database boundary with operator code.
-An authenticated API, separate credentials, approval/timeline UI, supervisor orphan
+The worker still shares the trusted OS user/database boundary with operator code.
+The API and worker now launch separately and the worker does not read API credentials.
+The approval/timeline UI, hardened credential/process isolation, supervisor orphan
 reconciliation, immediate subprocess cancellation, and a fresh-model crash experiment
 remain later work. Existing published live results describe the synchronous harness;
 they are not evidence that these new recovery paths have been measured with the model.

@@ -21,6 +21,68 @@
       "metadata_requires_review": false
     },
     {
+      "name": "anyio",
+      "version": "4.15.1",
+      "license_expression": "MIT",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "click",
+      "version": "8.5.0",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "fastapi",
+      "version": "0.141.1",
+      "license_expression": "MIT",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "license_expression": null,
+      "license_classifiers": [
+        "OSI Approved :: MIT License"
+      ],
+      "license_metadata": "MIT",
+      "metadata_requires_review": false
+    },
+    {
+      "name": "httpcore2",
+      "version": "2.13.1",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [
+        "OSI Approved :: BSD License"
+      ],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "httpx2",
+      "version": "2.13.1",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [
+        "OSI Approved :: BSD License"
+      ],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
       "name": "iniconfig",
       "version": "2.3.0",
       "license_expression": "MIT",
@@ -161,6 +223,22 @@
       "metadata_requires_review": false
     },
     {
+      "name": "starlette",
+      "version": "1.7.0",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "truststore",
+      "version": "0.10.4",
+      "license_expression": "MIT",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
       "name": "typer",
       "version": "0.27.2",
       "license_expression": "MIT",
@@ -180,6 +258,14 @@
       "name": "typing_extensions",
       "version": "4.16.0",
       "license_expression": "PSF-2.0",
+      "license_classifiers": [],
+      "license_metadata": null,
+      "metadata_requires_review": false
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.53.0",
+      "license_expression": "BSD-3-Clause",
       "license_classifiers": [],
       "license_metadata": null,
       "metadata_requires_review": false

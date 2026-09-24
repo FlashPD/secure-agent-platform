@@ -1,12 +1,21 @@
 import json
 import subprocess
+import time
 from pathlib import Path
 from typing import Annotated, cast
 
 import typer
 
 from agentguard.analysis import write_analysis
+from agentguard.api import create_app
 from agentguard.contracts import Profile
+from agentguard.control_setup import (
+    ControlSettings,
+    initialize_control,
+    load_credentials,
+    prepare_control,
+)
+from agentguard.control_smoke import run_control_smoke
 from agentguard.doctor import inventory
 from agentguard.durable_demo import run_durable_demo
 from agentguard.live import prepare_local_model, run_live_smoke
@@ -14,12 +23,97 @@ from agentguard.model import inference_environment
 from agentguard.model_setup import fetch_models, serve_command
 from agentguard.replay import run_replay
 from agentguard.sandbox_setup import build_images, smoke
+from agentguard.storage import LeaseLost
 from agentguard.suite import VARIANTS, run_suite
 from agentguard.supervisor import DockerComputer
 
 app = typer.Typer(
-    no_args_is_help=True, help="Agent authorization laboratory. Replay is not live inference."
+    no_args_is_help=True,
+    help="Agent authorization laboratory. Replay is not live inference.",
+    pretty_exceptions_show_locals=False,
 )
+
+
+@app.command()
+def control_smoke(
+    output: Annotated[Path, typer.Option()] = Path("artifacts/control-smoke"),
+) -> None:
+    """Exercise real authenticated HTTP and worker processes using authored responses."""
+    directory = run_control_smoke(Path.cwd(), output)
+    report = json.loads((directory / "report.json").read_text())
+    typer.echo("AUTHORED FIXTURE — zero model trials; real loopback HTTP.")
+    typer.echo(json.dumps(report["checks"], indent=2))
+    typer.echo(f"Report: {directory / 'report.json'}")
+    if not report["passed"]:
+        raise typer.Exit(1)
+
+
+@app.command()
+def control_init(
+    directory: Annotated[Path, typer.Option()] = Path("artifacts/control"),
+    fixture: Annotated[bool, typer.Option("--fixture")] = False,
+    port: Annotated[int, typer.Option(min=1024, max=65535)] = 8000,
+) -> None:
+    """Create private local credentials and settings. Explicit --fixture needs no services."""
+    try:
+        path = initialize_control(Path.cwd(), directory, fixture=fixture, port=port)
+    except (ValueError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Settings: {path}")
+    typer.echo(f"Operator token: {path.parent / 'operator.token'} (keep private)")
+    typer.echo("AUTHORED FIXTURE — zero model trials" if fixture else "PINNED LOCAL INFERENCE")
+
+
+@app.command()
+def api_serve(
+    settings: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "artifacts/control/settings.json"
+    ),
+    credentials: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "artifacts/control/credentials.json"
+    ),
+) -> None:
+    """Serve the operator API on 127.0.0.1; never pass credentials to the worker."""
+    import uvicorn
+
+    configured = ControlSettings.model_validate_json(settings.read_bytes())
+    control, _ = prepare_control(configured)
+    application = create_app(
+        control, load_credentials(credentials), origin=f"http://127.0.0.1:{configured.port}"
+    )
+    uvicorn.run(
+        application,
+        host="127.0.0.1",
+        port=configured.port,
+        proxy_headers=False,
+        access_log=False,
+        server_header=False,
+    )
+
+
+@app.command()
+def worker(
+    settings: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "artifacts/control/settings.json"
+    ),
+    once: Annotated[bool, typer.Option("--once")] = False,
+) -> None:
+    """Drain compatible durable jobs in a separate process without operator credentials."""
+    configured = ControlSettings.model_validate_json(settings.read_bytes())
+    _, runner = prepare_control(configured)
+    typer.echo(f"Worker mode: {configured.mode}")
+    while True:
+        try:
+            result = runner.run_once()
+        except LeaseLost:
+            typer.echo("Worker lease revoked or superseded; stopping.")
+            raise typer.Exit(1) from None
+        if result is not None:
+            typer.echo(f"Run state: {result['status']}")
+        if once:
+            return
+        if result is None:
+            time.sleep(1)
 
 
 @app.command()

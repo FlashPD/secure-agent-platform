@@ -6,6 +6,16 @@ PROFILE ?= mac-small
 
 .PHONY: eval-suite eval-suite-live
 .PHONY: demo-durable
+.PHONY: control-smoke api-serve worker
+control-smoke:
+	$(UV) run --locked agentguard control-smoke
+
+api-serve:
+	$(UV) run --locked agentguard api-serve
+
+worker:
+	$(UV) run --locked agentguard worker
+
 demo-durable:
 	$(UV) run --locked agentguard demo-durable
 

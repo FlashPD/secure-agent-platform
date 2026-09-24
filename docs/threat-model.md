@@ -4,8 +4,9 @@ This increment executes two fixed operations over synthetic state. The local
 replay uses trusted Python; the isolated replay sends bounded JSON to a fixed
 container entrypoint. The live loop uses the same isolated tools with a native
 local model. No mode accepts model-authored code or shell commands.
-There is no business-service HTTP API or authenticated approval UI yet. Completed
-suite reports can be inspected in a standalone, read-only browser viewer.
+The local authenticated control plane exposes defended task selection, redacted
+inspection, cancellation, and approval review. The interactive approval UI is still
+pending. Completed suite reports have a standalone, read-only browser viewer.
 
 Trusted inputs are the fixture contract, resource metadata/ACLs, policy code,
 selected experiment profile, operator review, and grader predicates. Document
@@ -40,9 +41,24 @@ The model never receives lease tokens or reviewer nonces. Direct database access
 remains trusted; this is not OS-level separation of the operator and worker.
 
 `Store.review()` and `Store.approval()` are trusted operator library functions.
-They have no authentication and must never become model tools. Operator/worker
-credential separation and API authentication are future work. A nonce prevents
-review replay; it does not establish reviewer identity.
+They must never become model tools. Their HTTP wrappers authenticate high-entropy
+bearer tokens, derive reviewer identity from a trusted principal, and require owner,
+actor, and workspace matches. Observer tokens cannot inspect review credentials or
+mutate state. Approval hashes/nonces remain separate from authentication; neither
+a nonce nor a worker lease establishes operator identity.
+
+The API and worker have separate startup paths; only the API reads token fingerprints,
+and credentials never enter worker settings or model/tool inputs. Both still run
+under the same trusted OS user and access SQLite. This is HTTP authorization and
+credential-flow separation, not protection against a compromised host-code worker.
+API credentials are reloaded on server restart; there is no external identity provider.
+
+Exact Host/Origin and Fetch Metadata checks, custom mutation headers, JSON-only
+bounded bodies, and non-cacheable responses constrain browser requests. The service
+has no cookies, permissive CORS, or trusted proxy headers. Status/timeline endpoints
+omit raw responses, free text, approval nonces, and lease tokens. Exact canonical
+action content is intentionally available to the owning reviewer. A future UI must
+still escape it. See [the API contract and tests](control-plane.md).
 
 The ten-task development benchmark can opt into an exact-action reviewer
 simulator. Its predeclared allowlist and task contract are trusted; it receives
@@ -83,10 +99,10 @@ does not authenticate evidence against a malicious host owner. The standalone
 viewer escapes embedded JSON delimiters and writes document/model content only
 through DOM text APIs. Its content security policy limits executable code and
 styles to the bundled hashes and denies network connections. It exposes no tool
-execution, approval, authentication, or service endpoint. These checks do not
-establish CSRF protection or credential separation for the future application.
+execution, approval, authentication, or service endpoint. Its rendering tests are
+separate from the control-plane authentication/CSRF tests and the future UI tests.
 
 Not implemented: immediate in-flight cancellation, model-failure retries,
-authenticated application security, or hosted multi-tenancy.
-Do not expose this package as a remote business service. The local inference
+interactive approval UI, hardened worker isolation, or hosted multi-tenancy.
+The control plane is limited to trusted loopback use. The local inference
 server has no business credentials; its built-in agent tools and browser UI are disabled.

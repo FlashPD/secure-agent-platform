@@ -1,7 +1,7 @@
 """Single-node effect kernel. Policy, approval consumption, effect and audit commit together.
 
-This is a trusted library boundary, not an authenticated control plane. The model
-must only receive the Action schema; review() belongs to the future operator API.
+This is a trusted library boundary. The model must only receive the Action schema;
+HTTP callers must go through the authenticated control plane before review().
 """
 
 import json
@@ -26,6 +26,7 @@ from agentguard.computation import (
     validate_result,
 )
 from agentguard.contracts import (
+    ACTION_ADAPTER,
     Action,
     Document,
     Execution,
@@ -120,7 +121,18 @@ CREATE TABLE IF NOT EXISTS jobs (
     deadline REAL,
     waiting_approval_id TEXT REFERENCES approvals(id)
 );
-PRAGMA user_version = 3;
+CREATE TABLE IF NOT EXISTS api_submissions (
+    episode_id TEXT PRIMARY KEY REFERENCES jobs(episode_id),
+    owner TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    workspace TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    scenario_id TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    UNIQUE(owner, idempotency_key)
+);
+PRAGMA user_version = 4;
 """
 
 
@@ -169,7 +181,7 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2, 3):
+            if version not in (0, 1, 2, 3, 4):
                 raise ValueError(f"Unsupported database schema: {version}")
             db.execute("PRAGMA journal_mode=WAL")
             db.executescript(SCHEMA)
@@ -194,30 +206,50 @@ class Store:
         experimental_profile: Profile = "defended",
         max_actions: int = 8,
     ) -> str:
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            return self._create_episode(
+                db,
+                contract,
+                documents,
+                projects,
+                experimental_profile=experimental_profile,
+                max_actions=max_actions,
+            )
+
+    def _create_episode(
+        self,
+        db: sqlite3.Connection,
+        contract: TaskContract,
+        documents: tuple[Document, ...],
+        projects: tuple[Project, ...],
+        *,
+        experimental_profile: Profile = "defended",
+        max_actions: int = 8,
+    ) -> str:
+        """Compose fixture creation with trusted control-plane submission atomically."""
         if experimental_profile not in ("baseline", "prompt_only", "defended"):
             raise ValueError("Unknown policy profile")
         if not 1 <= max_actions <= 64:
             raise ValueError("max_actions must be between 1 and 64")
         episode_id = str(uuid.uuid4())
-        with self.connection() as db:
-            db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            "INSERT INTO episodes(id,contract,profile,max_actions) VALUES (?,?,?,?)",
+            (episode_id, contract.model_dump_json(), experimental_profile, max_actions),
+        )
+        resources: tuple[Document | Project, ...] = (*documents, *projects)
+        for resource in resources:
+            if resource.workspace != contract.workspace:
+                raise ValueError("Fixtures must belong to the episode workspace")
             db.execute(
-                "INSERT INTO episodes(id,contract,profile,max_actions) VALUES (?,?,?,?)",
-                (episode_id, contract.model_dump_json(), experimental_profile, max_actions),
+                "INSERT INTO resources VALUES (?,?,?,?)",
+                (
+                    episode_id,
+                    "document" if isinstance(resource, Document) else "project",
+                    resource.id,
+                    resource.model_dump_json(),
+                ),
             )
-            resources: tuple[Document | Project, ...] = (*documents, *projects)
-            for resource in resources:
-                if resource.workspace != contract.workspace:
-                    raise ValueError("Fixtures must belong to the episode workspace")
-                db.execute(
-                    "INSERT INTO resources VALUES (?,?,?,?)",
-                    (
-                        episode_id,
-                        "document" if isinstance(resource, Document) else "project",
-                        resource.id,
-                        resource.model_dump_json(),
-                    ),
-                )
         return episode_id
 
     @staticmethod
@@ -474,7 +506,7 @@ class Store:
     def review(
         self, approval_id: str, *, expected_hash: str, nonce: str, reviewer: str, approve: bool
     ) -> None:
-        """Trusted operator entry point. API authentication is not implemented yet."""
+        """Trusted operator entry point; HTTP authentication lives in agentguard.api."""
         if not reviewer.strip():
             raise ReviewRejected("Reviewer is required")
         with self.connection() as db:
@@ -491,6 +523,42 @@ class Store:
                 ).fetchone()[0]
             ):
                 raise ReviewRejected("Approval is stale, already reviewed, or does not match")
+            episode = db.execute(
+                "SELECT * FROM episodes WHERE id=?", (row["episode_id"],)
+            ).fetchone()
+            job = db.execute(
+                "SELECT status,deadline FROM jobs WHERE episode_id=?", (row["episode_id"],)
+            ).fetchone()
+            if job is not None and (
+                job["status"] not in ("RUNNING", "WAITING_APPROVAL", "QUEUED")
+                or (job["deadline"] is not None and job["deadline"] <= self.clock())
+            ):
+                raise ReviewRejected("Run is terminal or expired")
+            action = ACTION_ADAPTER.validate_python(json.loads(row["snapshot"])["action"])
+            kind, target = (
+                ("document", action.arguments.document_id)
+                if isinstance(action, ReadAction)
+                else ("project", action.arguments.project_id)
+            )
+            resource_row = db.execute(
+                "SELECT payload FROM resources WHERE episode_id=? AND kind=? AND id=?",
+                (row["episode_id"], kind, target),
+            ).fetchone()
+            resource = None
+            if resource_row:
+                resource = (Document if kind == "document" else Project).model_validate_json(
+                    resource_row["payload"]
+                )
+            current = evaluate(
+                episode_id=row["episode_id"],
+                contract=TaskContract.model_validate_json(episode["contract"]),
+                profile=episode["profile"],
+                action=action,
+                resource=resource,
+                confidential=bool(episode["confidential"]),
+            )
+            if current.action_hash != expected_hash or current.outcome != "REQUIRE_APPROVAL":
+                raise ReviewRejected("Approval scope or resource state changed")
             status = "APPROVED" if approve else "REJECTED"
             db.execute(
                 "UPDATE approvals SET status=?,reviewer=? WHERE id=?",

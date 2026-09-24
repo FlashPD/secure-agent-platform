@@ -139,11 +139,35 @@ library-level worker guarantees, not authentication or production process isolat
 The existing synchronous benchmark remains a separate execution mode; its published
 live evidence is unchanged. No fresh model evaluation is claimed for this increment.
 
-## Next increment: authenticated control plane
+## Seventh increment: authenticated local control plane
 
-1. Expose defended task submission, status, cancellation, and safe timeline inspection.
-2. Establish operator/worker credential separation and authenticated review endpoints.
-3. Add CSRF protection, escaped trace rendering, and the interactive approval UI.
+- [x] Add a loopback-only FastAPI service with private bearer credentials and
+  separate operator/observer permissions; the worker does not load API credentials.
+- [x] Derive actor/workspace from trusted identity, allow only predefined defended
+  tasks, and scope run/approval access to the authenticated owner.
+- [x] Atomically commit resources, job, ownership, idempotency binding, and audit;
+  preserve retry identity and enforce a bounded pending-run admission limit.
+- [x] Expose status, redacted timelines, cancellation, and scoped approval detail/review.
+- [x] Reject stale approvals at review time and again at effect commit; validate
+  current scope, ACLs, sensitivity, policy, resource state, and run deadline.
+- [x] Enforce exact Host/Origin, browser Fetch Metadata, explicit CSRF headers,
+  bounded JSON bodies, non-cacheable responses, and generic validation errors.
+- [x] Add separate setup/API/worker commands and a real HTTP smoke that restarts
+  the API during an approval wait, then completes via another worker process.
+- [x] Pass 256 tests, lint, formatting, and strict types; all 12 real HTTP smoke
+  checks pass. The smoke uses authored responses and performs zero model trials.
+- [x] Lock API/test dependencies and update their license metadata inventory.
+
+See the [API runbook and trust boundaries](control-plane.md). HTTP authority is
+separated; the API and worker still share the trusted local OS user and SQLite.
+The existing live evaluation evidence is unchanged. There is no browser approval
+UI, production identity provider, or hardened worker process isolation yet.
+
+## Next increment: interactive operator UI
+
+1. Build the scenario picker and redacted execution timeline against the authenticated API.
+2. Display exact review scope, expiry, and resource versions with explicit approve/reject.
+3. Test browser escaping, credential handling, stale review errors, and restart behavior.
 
 Extend coverage to the remaining four planned tools during platform work. The
 static report viewer does not replace the authenticated application/approval UI.
@@ -151,9 +175,10 @@ static report viewer does not replace the authenticated application/approval UI.
 ## Later milestones
 
 The remaining work follows the architecture plan: all six tools;
-authenticated API and operator/worker credential separation;
+stronger operator/worker isolation;
 approval UI and execution timeline; paired held-out evaluation and uncertainty;
 recovery/isolation checks; frozen held-out benchmark; portfolio recording and release.
 
-Do not treat the trusted `review()` library call as an authenticated approval endpoint, or authored replay
-recovery as evidence that a model can recover after a denied call.
+Direct `Store.review()` remains a trusted library call; authentication applies to
+the HTTP review endpoint. Authored replay recovery is not evidence that a model
+can recover after a denied call.

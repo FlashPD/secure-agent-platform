@@ -36,36 +36,47 @@ class Queue:
         self.store = store
 
     def submit(self, episode: str, task: str, budgets: Budgets, *, manifest: str) -> None:
-        if not task.strip() or len(task) > 16000 or not manifest:
-            raise ValueError("A bounded task and execution manifest are required")
         with self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT * FROM episodes WHERE id=?", (episode,)).fetchone()
-            if row is None:
-                raise KeyError("Unknown episode")
-            if row["profile"] != "defended" or row["cancelled"]:
-                raise ValueError("Only active defended episodes can enter the application queue")
-            previous = db.execute("SELECT * FROM jobs WHERE episode_id=?", (episode,)).fetchone()
-            if previous is not None:
-                if (previous["task"], previous["budgets"], previous["manifest"]) != (
-                    task,
-                    budgets.model_dump_json(),
-                    manifest,
-                ):
-                    raise ValueError("Job already binds different inputs")
-                return
-            if db.execute(
-                "SELECT 1 FROM executions WHERE episode_id=? UNION ALL "
-                "SELECT 1 FROM agent_runs WHERE episode_id=?",
-                (episode, episode),
-            ).fetchone():
-                raise ValueError("Queue submission requires an unused episode")
-            db.execute(
-                "INSERT INTO jobs(episode_id,status,task,budgets,manifest) "
-                "VALUES (?,'QUEUED',?,?,?)",
-                (episode, task, budgets.model_dump_json(), manifest),
-            )
-            self.store._audit(db, episode, None, "JOB_QUEUED", {})
+            self._submit(db, episode, task, budgets, manifest=manifest)
+
+    def _submit(
+        self,
+        db: sqlite3.Connection,
+        episode: str,
+        task: str,
+        budgets: Budgets,
+        *,
+        manifest: str,
+    ) -> None:
+        """Compose a job and HTTP idempotency record in one transaction."""
+        if not task.strip() or len(task) > 16000 or not manifest:
+            raise ValueError("A bounded task and execution manifest are required")
+        row = db.execute("SELECT * FROM episodes WHERE id=?", (episode,)).fetchone()
+        if row is None:
+            raise KeyError("Unknown episode")
+        if row["profile"] != "defended" or row["cancelled"]:
+            raise ValueError("Only active defended episodes can enter the application queue")
+        previous = db.execute("SELECT * FROM jobs WHERE episode_id=?", (episode,)).fetchone()
+        if previous is not None:
+            if (previous["task"], previous["budgets"], previous["manifest"]) != (
+                task,
+                budgets.model_dump_json(),
+                manifest,
+            ):
+                raise ValueError("Job already binds different inputs")
+            return
+        if db.execute(
+            "SELECT 1 FROM executions WHERE episode_id=? UNION ALL "
+            "SELECT 1 FROM agent_runs WHERE episode_id=?",
+            (episode, episode),
+        ).fetchone():
+            raise ValueError("Queue submission requires an unused episode")
+        db.execute(
+            "INSERT INTO jobs(episode_id,status,task,budgets,manifest) VALUES (?,'QUEUED',?,?,?)",
+            (episode, task, budgets.model_dump_json(), manifest),
+        )
+        self.store._audit(db, episode, None, "JOB_QUEUED", {})
 
     def claim(self, *, manifest: str, lease_seconds: float = 30) -> Lease | None:
         if not 0 < lease_seconds <= 300:
