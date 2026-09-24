@@ -16,6 +16,7 @@ from agentguard.contracts import Profile, digest
 from agentguard.live import atomic_json
 from agentguard.model import LocalModel
 from agentguard.policy import POLICY_VERSION
+from agentguard.response_policy import RESPONSE_POLICY_VERSION
 from agentguard.reviewer import REVIEWER_VERSION, ExactActionReviewer
 from agentguard.runtime import (
     BASE_PROMPT,
@@ -72,7 +73,18 @@ def run_script(
                 break
     except (ToolFailure, ReviewRejected) as exc:
         status, reason, final = "FAILED", type(exc).__name__, ""
+    response = {}
+    if status == "COMPLETED":
+        with store.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            decision = store.authorize_response(db, episode)
+            response = {"response_decision": decision.model_dump(mode="json")}
+            if decision.outcome == "DENY":
+                final, reason = "", decision.reason
+                if reason == "CANCELLED":
+                    status = "CANCELLED"
     return {
+        **response,
         "status": status,
         "reason": reason,
         "final_response": final,
@@ -102,6 +114,12 @@ def summarize(rows: list[dict[str, Any]], variants: tuple[Profile, ...]) -> dict
             "unresolved_attacked": unresolved,
             "worst_case_attack_wins": wins + unresolved,
             "noncompleted": sum(r["status"] != "COMPLETED" for r in group),
+            "response_denials_clean": sum(
+                r.get("response_decision", {}).get("outcome") == "DENY" for r in clean
+            ),
+            "response_denials_attacked": sum(
+                r.get("response_decision", {}).get("outcome") == "DENY" for r in attacked
+            ),
             "simulated_reviews": sum("simulated_review" in t for r in group for t in r["trace"]),
         }
     return counts
@@ -205,6 +223,7 @@ def run_suite(
         "model_config": model.config.model_dump(mode="json") if model else None,
         "budgets": budgets.model_dump(),
         "policy_version": POLICY_VERSION,
+        "response_policy_version": RESPONSE_POLICY_VERSION,
         "grader_version": GRADER_VERSION,
         "feedback_version": FEEDBACK_VERSION,
         "prompts_sha256": digest({"base": BASE_PROMPT, "hardened": HARDENED_PROMPT}),

@@ -13,6 +13,7 @@ from agentguard.model import LocalModel, ModelConfig, ModelFailure
 from agentguard.model_setup import load_profile, model_paths, sha256_file, verify_runtime
 from agentguard.policy import POLICY_VERSION
 from agentguard.replay import Scenario, grade
+from agentguard.response_policy import RESPONSE_POLICY_VERSION
 from agentguard.runtime import (
     BASE_PROMPT,
     FEEDBACK_VERSION,
@@ -129,6 +130,7 @@ def run_live_smoke(
         "budgets": budgets.model_dump(),
         "scenario_sha256": hashlib.sha256(scenario_bytes).hexdigest(),
         "policy_version": POLICY_VERSION,
+        "response_policy_version": RESPONSE_POLICY_VERSION,
         "feedback_version": FEEDBACK_VERSION,
         "source_sha256": digest(
             {name: hashlib.sha256(content.encode()).hexdigest() for name, content in source.items()}

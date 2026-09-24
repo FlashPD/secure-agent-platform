@@ -97,6 +97,15 @@ These are reachable scripted behaviors, not measured model attack-success rates.
 of sensitive tool effects does not prevent a model from disclosing source text
 in its final answer.
 
+An opt-in [response clearance contract](adr-004-response-clearance-treatment.md)
+now withholds final text from an internal-only destination after any confidential
+read/search/list exposure. It uses current scope and taint at final commit, retains
+lease/cancellation checks, and does not use hidden grader information. Missing/null
+scope preserves legacy behavior. This coarse treatment blocks harmless output too;
+the known clean-triage utility failure remains visible. The default catalogue has
+not adopted it. Raw replies and source-bearing evaluation artifacts remain trusted
+local evidence, outside the final-response confidentiality claim.
+
 The container backend uses no host mounts or network, a read-only root filesystem,
 unprivileged UID, dropped capabilities, no-new-privileges, default seccomp, and
 bounded resources. A separate diagnostic image probes these restrictions. Tool

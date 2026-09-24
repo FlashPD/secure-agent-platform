@@ -46,6 +46,7 @@ from agentguard.contracts import (
     canonical_json,
     digest,
 )
+from agentguard.response_policy import ResponseDecision, evaluate_response
 from agentguard.tool_state import resolve
 
 SCHEMA = """
@@ -351,6 +352,26 @@ class Store:
             "INSERT INTO audit_events(episode_id,execution_key,kind,payload) VALUES (?,?,?,?)",
             (episode_id, key, kind, canonical_json(payload)),
         )
+
+    def authorize_response(
+        self, db: sqlite3.Connection, episode_id: str, *, lease: Lease | None = None
+    ) -> ResponseDecision:
+        """Caller holds its fenced write transaction through final-result persistence."""
+        if not db.in_transaction:
+            raise ValueError("Response authorization requires a write transaction")
+        self.require_lease(db, episode_id, lease)
+        row = db.execute("SELECT * FROM episodes WHERE id=?", (episode_id,)).fetchone()
+        if row is None:
+            raise KeyError("Unknown episode")
+        decision = evaluate_response(
+            episode_id=episode_id,
+            contract=TaskContract.model_validate_json(row["contract"]),
+            profile=row["profile"],
+            confidential=bool(row["confidential"]),
+            cancelled=bool(row["cancelled"]),
+        )
+        self._audit(db, episode_id, None, "RESPONSE_DECISION", decision.model_dump(mode="json"))
+        return decision
 
     def execute(
         self,

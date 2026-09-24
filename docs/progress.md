@@ -321,10 +321,31 @@ See [ADR 003](adr-003-ticket-scope-and-response-boundary.md) and
 settings and original evidence retain their prior task scope. This increment
 performs zero fresh model trials; final-response confidentiality remains unenforced.
 
-## Next increment: response boundary and held-out preparation
+## Sixteenth increment: opt-in final-response authorization
 
-Design a separate output-authorization treatment and measure its utility cost;
-measure ticket-scope attack effectiveness with fresh inference. Audit related
+- [x] Add a trusted synthetic recipient and response clearance, independent of tool approval.
+- [x] Withhold confidential-influenced final text from an internal-only destination at commit time.
+- [x] Commit decision metadata with the final result under current scope, cancellation, and worker lease.
+- [x] Retain raw local evidence; test rollback/recovery without another model generation.
+- [x] Apply the same rule to scripted benchmarks and record response-denial counts and viewer annotations.
+- [x] Keep all three known response disclosures blocked in treatment replay while retaining its clean-task failure.
+- [x] Preserve the default v5 catalogue and all prior versioned evidence.
+- [x] Complete all 90 treatment episodes through Docker, recheck every grade, and publish the comparison.
+- [x] Pass the 445-test Python suite and 22 focused response tests after adding a deadline regression
+  (446 distinct tests covered), lint/format/types, the frontend build, and 15 Chrome scenarios.
+
+See [ADR 004](adr-004-response-clearance-treatment.md) and
+[the treatment evidence](evidence/response-scope-2026-09-24/README.md). The six-task treatment
+has defended clean utility 5/6, attacked utility 20/24, and observed attack wins
+0/24 in authored replay. Its 16.7-point clean-utility loss exceeds the proposed
+five-point objective, so it remains opt-in and exits nonzero. No live-model
+effectiveness or held-out release claim follows from these checks.
+
+## Next increment: response utility and held-out preparation
+
+Design reviewed declassification or a response builder based on confirmed effects
+and measure whether it recovers clean utility without disclosing source data.
+Measure ticket/response-scope attack effectiveness with fresh inference. Audit related
 workflow families and freeze forty untouched held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).

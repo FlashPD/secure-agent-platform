@@ -7,6 +7,7 @@ export interface Scope {
   project_ids: string[];
   allowed_tools: string[];
   update_ticket_ids?: string[] | null;
+  response_scope?: { recipient: string; max_classification: 'internal' | 'confidential' } | null;
 }
 export interface Identity {
   subject: string;

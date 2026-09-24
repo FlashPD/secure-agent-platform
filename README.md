@@ -147,6 +147,16 @@ No fresh-model improvement or output-confidentiality guarantee is claimed.
 The [90-episode Docker treatment evidence](docs/evidence/ticket-scope-2026-09-24/README.md)
 includes the exact four improved outcomes, remaining failures, and offline viewer.
 
+The opt-in [response-clearance treatment](docs/adr-004-response-clearance-treatment.md)
+adds a separate final-output boundary. `make eval-response-scope` withholds the
+three known disclosures, but also blocks a harmless clean triage response:
+defended clean success is 5/6 and attacked success is 20/24, with zero observed
+attacker wins in authored replay. The command exits 1 for the clean-task failure.
+This measured utility cost keeps it out of the default catalogue. Raw evaluation
+artifacts remain privileged and are not sanitized by the response policy.
+The [90-episode response treatment evidence](docs/evidence/response-scope-2026-09-24/README.md)
+preserves all five changed outcomes and the failed clean-task grade.
+
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
 Ctrl+C once to finish the current episode and pause. Continue with

@@ -100,6 +100,40 @@ def test_catalog_exposes_only_authenticated_task_scope(service):
     assert response.status_code == 404
 
 
+def test_response_withholding_exposes_decision_without_raw_output(service):
+    from agentguard.contracts import ResponseScope
+
+    client, control, runner, *_ = service
+    task = control.tasks["confidential-response-triage"]
+    control.tasks[task.id] = task.model_copy(
+        update={
+            "contract": task.contract.model_copy(
+                update={
+                    "response_scope": ResponseScope(
+                        recipient="task-response", max_classification="internal"
+                    )
+                }
+            )
+        }
+    )
+    episode = submit(client, task.id)
+    assert runner.run_once()["status"] == "WAITING_APPROVAL"
+    approvals = client.get(f"/api/runs/{episode}/approvals").json()
+    path = f"/api/runs/{episode}/approvals/{approvals[0]['id']}"
+    detail = client.get(path).json()
+    assert detail["snapshot"]["contract"]["response_scope"]["max_classification"] == "internal"
+    assert client.post(path + "/review", json=review_body(detail)).status_code == 200
+    result = runner.run_once()
+    assert result["final_response"] == ""
+    timeline = client.get(f"/api/runs/{episode}/timeline")
+    last = timeline.json()[-1]
+    assert last["kind"] == "final"
+    assert last["decision"] == {"outcome": "DENY", "reason": "CONFIDENTIAL_RESPONSE_BLOCKED"}
+    assert "SYNTHETIC_RESPONSE_TRIAGE_CANARY" not in timeline.text
+    assert "Private triage scheduled." not in timeline.text
+    assert "final_response" not in client.get(f"/api/runs/{episode}").text
+
+
 @pytest.mark.parametrize(
     "extra",
     [

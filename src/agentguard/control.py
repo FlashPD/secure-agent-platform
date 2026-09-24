@@ -271,6 +271,16 @@ class ControlPlane:
                             "reason": "SENSITIVE_WRITE",
                         }
                         entry["approval_status"] = approval["status"]
+                if entry.get("kind") == "final":
+                    response = db.execute(
+                        "SELECT result FROM agent_runs WHERE episode_id=?", (episode,)
+                    ).fetchone()
+                    result = (
+                        json.loads(response["result"]) if response and response["result"] else {}
+                    )
+                    decision = result.get("response_decision")
+                    if decision is not None:
+                        entry["decision"] = {key: decision[key] for key in ("outcome", "reason")}
                 entries.append(entry)
             return entries
 

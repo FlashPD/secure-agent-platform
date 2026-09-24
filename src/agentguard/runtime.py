@@ -241,6 +241,23 @@ class Runtime:
                 "trace": trace,
             }
             with checkpoint() as db:
+                if status == "COMPLETED":
+                    # Authorize using CURRENT scope/taint in the same fenced transaction
+                    # that commits the visible result. Raw model evidence stays separate.
+                    decision = self.store.authorize_response(db, episode, lease=lease)
+                    result["response_decision"] = decision.model_dump(mode="json")
+                    if decision.outcome == "DENY":
+                        result["final_response"] = ""
+                        result["reason"] = decision.reason
+                        if decision.reason == "CANCELLED":
+                            status = "CANCELLED"
+                    if self.clock() >= deadline or (
+                        wall_deadline is not None and self.store.clock() >= wall_deadline
+                    ):
+                        status = "BUDGET_EXHAUSTED"
+                        result["reason"] = "EPISODE_TIMEOUT"
+                        result["final_response"] = ""
+                    result["status"] = status
                 db.execute(
                     "UPDATE agent_runs SET status=?,result=? WHERE episode_id=?",
                     (status, canonical_json(result), episode),

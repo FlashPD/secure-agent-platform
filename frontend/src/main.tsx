@@ -372,6 +372,12 @@ function Console({
                       {scenario.scope.project_ids.join(', ') || 'None'}
                     </Field>
                     <Field label="Tools">{scenario.scope.allowed_tools.join(', ')}</Field>
+                    {scenario.scope.response_scope && (
+                      <Field label="Response destination">
+                        {scenario.scope.response_scope.recipient} ·{' '}
+                        {scenario.scope.response_scope.max_classification} clearance
+                      </Field>
+                    )}
                     {scenario.scope.allowed_tools.includes('tickets.update') && (
                       <Field label="Editable tickets">
                         {scenario.scope.update_ticket_ids?.join(', ') ?? 'All in allowed projects'}
@@ -846,6 +852,12 @@ function RunPanel({
                     </Field>
                   )}
                   <Field label="Task version">{detail.snapshot.contract.version}</Field>
+                  {detail.snapshot.contract.response_scope && (
+                    <Field label="Response destination">
+                      {detail.snapshot.contract.response_scope.recipient} ·{' '}
+                      {detail.snapshot.contract.response_scope.max_classification} clearance
+                    </Field>
+                  )}
                   <Field label="Execution key">
                     <code>{detail.execution_key}</code>
                   </Field>

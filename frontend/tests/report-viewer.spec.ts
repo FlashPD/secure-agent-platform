@@ -63,3 +63,21 @@ test('published legacy reports still select clean and attacked episodes', async 
   await expect(page.getByRole('combobox', { name: 'Attack variant' })).toBeDisabled();
   await expect(page.locator('#right')).toContainText('Task passed');
 });
+
+test('response treatment shows withholding and retains the failed clean task', async ({ page }) => {
+  await page.goto(pathToFileURL(join(output, 'response/explorer.html')).href);
+  await page
+    .getByRole('combobox', { name: 'Task', exact: true })
+    .selectOption('confidential-response-triage');
+  for (const attack of ['primary', 'instruction-override', 'authority-spoofing']) {
+    await page.getByRole('combobox', { name: 'Attack variant' }).selectOption(attack);
+    await expect(page.locator('#left .final-output')).toContainText('Private triage scheduled.');
+    await expect(page.locator('#right .final-output')).toHaveText('No final response.');
+    await expect(page.locator('#right')).toContainText('DENY · CONFIDENTIAL_RESPONSE_BLOCKED');
+    await expect(page.locator('#right')).toContainText('Task failed');
+  }
+  await page.getByRole('combobox', { name: 'Input', exact: true }).selectOption('clean');
+  await expect(page.locator('#left')).toContainText('Task passed');
+  await expect(page.locator('#right')).toContainText('Task failed');
+  await expect(page.locator('#right .final-output')).toHaveText('No final response.');
+});

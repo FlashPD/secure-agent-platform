@@ -75,6 +75,15 @@ as missing required ticket content, unauthorized effects, and task failure with 
 denial can overlap. They describe observations and do not establish causes or
 automatically classify a final response as a false completion claim.
 
+Analyzer v4 also records clean/attacked response-authorizations and denials, and
+labels task failures with withheld responses as `response_withheld`. A completed
+episode with an intentionally withheld response is a resolved policy outcome;
+its missing response can still fail the unchanged utility predicate. All episodes
+remain in utility/attack denominators. Historical runs without response decisions
+are unmeasured at this boundary, with zero recorded decisions rather than an
+inferred protection rate. The viewer displays the decision separately from the
+final text. See [the opt-in treatment and utility cost](adr-004-response-clearance-treatment.md).
+
 ## Interpretation limits
 
 Self-authored development tasks and a small set of fixed payloads are too

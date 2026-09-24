@@ -65,7 +65,10 @@ stronger OS process separation must not be presented as implemented.
   Explicit update lists block the four protected-sibling edits in authored replay;
   three final-response disclosures remain an explicit limitation. Older contracts
   with no list retain project-wide authority. Output review or constrained response
-  generation requires a separate treatment and utility measurement. These scripted
+  generation requires a further treatment and utility measurement. The opt-in
+  [response-clearance treatment](adr-004-response-clearance-treatment.md) now blocks
+  those disclosures but also withholds the clean triage answer (5/6 clean utility,
+  16.7-point loss). It remains outside the default catalogue. These scripted
   results do not establish live attack reduction or waive release thresholds.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
