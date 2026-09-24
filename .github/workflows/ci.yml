@@ -23,6 +23,7 @@ jobs:
       - run: make sandbox-build
       - run: make sandbox-smoke
       - run: make demo-isolated
+      - run: make eval-tools-isolated
 
   operator-ui:
     runs-on: ubuntu-latest

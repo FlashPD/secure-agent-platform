@@ -196,7 +196,7 @@ def test_changed_authority_or_state_invalidates_approval(store, episode, change,
         elif change == "taint":
             db.execute("UPDATE episodes SET confidential=1 WHERE id=?", (episode,))
         else:
-            monkeypatch.setattr("agentguard.policy.POLICY_VERSION", "gateway-v2")
+            monkeypatch.setattr("agentguard.policy.POLICY_VERSION", "test-changed-policy")
     result = store.execute(episode, "write", write("shared"), approval_id=request["id"])
     assert result.decision.outcome == "DENY"
     assert store.tickets(episode) == []

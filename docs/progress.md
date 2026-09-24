@@ -190,16 +190,38 @@ checks with real API/worker processes, not fresh model trials or a human-usabili
 study. Independent paired grades remain in the offline report viewer. No live
 benchmark result changed, and the held-out release gate is still pending.
 
-## Next increment: complete the tool surface
+## Ninth increment: complete the tool surface
 
-Implement `documents.search`, `tickets.list`, `tickets.update`, and `shares.request`
-with corresponding scope, policy, isolated computation, transactional effect,
-and independent grader coverage before expanding/freezing the release benchmark.
+- [x] Add ACL/scope-filtered FTS5 document search and bounded ticket listing.
+- [x] Add versioned ticket updates with full snapshot checks and idempotent effects.
+- [x] Add exact-document sharing into an episode-local sink, with source/destination review.
+- [x] Propagate confidentiality through search snippets, ticket previews, and stored tickets.
+- [x] Migrate schema 4 to 5 transactionally, preserving legacy tickets and concurrent startup.
+- [x] Extend the fixed container runner, independent grader, reviewer, and approval UI.
+- [x] Add four development workflows; new console installs offer 14 scenarios.
+- [x] Run all 24 scripted tool episodes through Docker: defended clean and attacked
+  utility 4/4 each, zero observed attacker wins; both permissive profiles expose
+  all four authored attacks. This is zero model trials.
+- [x] Pass all 24 container contract/containment checks.
+- [x] Pass 311 Python tests, 11 Chrome scenarios, Python/TypeScript checks, and UI build.
+- [x] Rerun the original 60-episode replay and seven-check durable recovery demo.
+- [x] Publish checksummed scripted evidence, the offline viewer, and exact-share screenshot.
+
+See [tool contracts and reproduction](tool-surface.md) and
+[recorded verification](evidence/tool-surface-2026-09-23/README.md).
+The original ten-task live evidence remains unchanged. Search uses host FTS5
+before sending authorized snippets to isolated computation; share effects remain
+entirely synthetic. No new live-model or held-out result is claimed.
+
+## Next increment: expanded live evaluation
+
+Measure fresh local inference with the six-tool schema and new workflows, including
+context/token budgets and denial recovery. Then expand the development task
+families and freeze the held-out benchmark before further defense tuning.
 
 ## Later milestones
 
-The remaining work follows the architecture plan: all six tools;
-stronger operator/worker isolation;
+The remaining work follows the architecture plan: stronger operator/worker isolation;
 paired held-out evaluation and uncertainty;
 recovery/isolation checks; frozen held-out benchmark; portfolio recording and release.
 

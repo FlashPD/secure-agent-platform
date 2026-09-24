@@ -348,7 +348,7 @@ def test_schema_v2_upgrades_without_losing_evidence(store, episode):
         db.execute("PRAGMA user_version=2")
     reopened = Store(store.path)
     with reopened.connection() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 4
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 5
         assert db.execute("SELECT count(*) FROM model_calls").fetchone()[0] == 1
         assert db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
 

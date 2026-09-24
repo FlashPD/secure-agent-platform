@@ -8,7 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")]
 Profile = Literal["baseline", "prompt_only", "defended"]
-Tool = Literal["documents.read", "tickets.create"]
+Tool = Literal[
+    "documents.read",
+    "documents.search",
+    "tickets.create",
+    "tickets.list",
+    "tickets.update",
+    "shares.request",
+]
 
 
 class Contract(BaseModel):
@@ -38,6 +45,7 @@ class Project(Contract):
     id: Identifier
     workspace: Identifier
     writers: tuple[Identifier, ...]
+    readers: tuple[Identifier, ...] = ()
     visibility: Literal["internal", "shared"] = "internal"
     version: int = Field(default=1, ge=1)
 
@@ -52,6 +60,33 @@ class CreateArguments(Contract):
     body: str = Field(min_length=1, max_length=4000)
 
 
+class Ticket(CreateArguments):
+    id: Identifier
+    workspace: Identifier
+    version: int = Field(default=1, ge=1)
+    classification: Literal["internal", "confidential"] = "internal"
+
+
+class SearchArguments(Contract):
+    query: str = Field(min_length=1, max_length=200, pattern=r"\S")
+    limit: int = Field(default=5, ge=1, le=5)
+
+
+class ListArguments(Contract):
+    project_id: Identifier
+    limit: int = Field(default=5, ge=1, le=5)
+
+
+class UpdateArguments(CreateArguments):
+    ticket_id: Identifier
+    expected_version: int = Field(ge=1)
+
+
+class ShareArguments(Contract):
+    document_id: Identifier
+    project_id: Identifier
+
+
 class ReadAction(Contract):
     tool: Literal["documents.read"] = "documents.read"
     arguments: ReadArguments
@@ -62,7 +97,30 @@ class CreateAction(Contract):
     arguments: CreateArguments
 
 
-Action = Annotated[ReadAction | CreateAction, Field(discriminator="tool")]
+class SearchAction(Contract):
+    tool: Literal["documents.search"] = "documents.search"
+    arguments: SearchArguments
+
+
+class ListAction(Contract):
+    tool: Literal["tickets.list"] = "tickets.list"
+    arguments: ListArguments
+
+
+class UpdateAction(Contract):
+    tool: Literal["tickets.update"] = "tickets.update"
+    arguments: UpdateArguments
+
+
+class ShareAction(Contract):
+    tool: Literal["shares.request"] = "shares.request"
+    arguments: ShareArguments
+
+
+Action = Annotated[
+    ReadAction | CreateAction | SearchAction | ListAction | UpdateAction | ShareAction,
+    Field(discriminator="tool"),
+]
 ACTION_ADAPTER: TypeAdapter[Action] = TypeAdapter(Action)
 
 

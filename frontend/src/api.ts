@@ -65,6 +65,14 @@ export interface ApprovalDetail extends Approval {
     action: { tool: string; arguments: Record<string, unknown> };
     contract: Scope;
     resource: { id: string; version: number; visibility?: string; [key: string]: unknown } | null;
+    source?: { id: string; version: number; classification: string; body: string } | null;
+    ticket?: {
+      id: string;
+      version: number;
+      classification: string;
+      title: string;
+      body: string;
+    } | null;
     policy_version: string;
     confidential: boolean;
   };

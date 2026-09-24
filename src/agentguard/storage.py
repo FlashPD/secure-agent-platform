@@ -18,26 +18,35 @@ from typing import Any, cast
 from agentguard.computation import (
     Computer,
     DocumentResult,
-    DocumentSnapshot,
     InProcessComputer,
+    ListResult,
+    SearchResult,
+    ShareEffect,
     TicketEffect,
     ToolRequest,
     ToolResult,
+    UpdateEffect,
     validate_result,
 )
 from agentguard.contracts import (
     ACTION_ADAPTER,
     Action,
+    CreateAction,
     Document,
     Execution,
+    ListAction,
     Profile,
     Project,
     ReadAction,
+    SearchAction,
+    ShareAction,
     TaskContract,
+    Ticket,
+    UpdateAction,
     canonical_json,
     digest,
 )
-from agentguard.policy import evaluate
+from agentguard.tool_state import resolve
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS episodes (
@@ -76,12 +85,43 @@ CREATE TABLE IF NOT EXISTS approvals (
     UNIQUE (episode_id, execution_key, action_hash)
 );
 CREATE TABLE IF NOT EXISTS tickets (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL,
     episode_id TEXT NOT NULL REFERENCES episodes(id),
     project_id TEXT NOT NULL,
     title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    workspace TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    classification TEXT NOT NULL DEFAULT 'internal',
+    PRIMARY KEY (episode_id, id)
+);
+CREATE TABLE IF NOT EXISTS simulated_shares (
+    id TEXT PRIMARY KEY,
+    episode_id TEXT NOT NULL REFERENCES episodes(id),
+    document_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    document_version INTEGER NOT NULL,
     body TEXT NOT NULL
 );
+CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+    episode_id UNINDEXED, document_id UNINDEXED, body
+);
+CREATE TRIGGER IF NOT EXISTS document_insert AFTER INSERT ON resources
+WHEN new.kind='document' BEGIN
+    INSERT INTO documents_fts(rowid,episode_id,document_id,body)
+    VALUES(new.rowid,new.episode_id,new.id,json_extract(new.payload,'$.body'));
+END;
+CREATE TRIGGER IF NOT EXISTS document_delete AFTER DELETE ON resources
+WHEN old.kind='document' BEGIN
+    DELETE FROM documents_fts WHERE rowid=old.rowid;
+END;
+CREATE TRIGGER IF NOT EXISTS document_update AFTER UPDATE ON resources
+WHEN old.kind='document' OR new.kind='document' BEGIN
+    DELETE FROM documents_fts WHERE rowid=old.rowid;
+    INSERT INTO documents_fts(rowid,episode_id,document_id,body)
+    SELECT new.rowid,new.episode_id,new.id,json_extract(new.payload,'$.body')
+    WHERE new.kind='document';
+END;
 CREATE TABLE IF NOT EXISTS audit_events (
     sequence INTEGER PRIMARY KEY AUTOINCREMENT,
     episode_id TEXT NOT NULL REFERENCES episodes(id),
@@ -132,7 +172,7 @@ CREATE TABLE IF NOT EXISTS api_submissions (
     created_at REAL NOT NULL,
     UNIQUE(owner, idempotency_key)
 );
-PRAGMA user_version = 4;
+PRAGMA user_version = 5;
 """
 
 
@@ -180,11 +220,41 @@ class Store:
         self.computer = computer if computer is not None else InProcessComputer()
         path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
-            version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2, 3, 4):
-                raise ValueError(f"Unsupported database schema: {version}")
             db.execute("PRAGMA journal_mode=WAL")
-            db.executescript(SCHEMA)
+            db.execute("BEGIN IMMEDIATE")
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if version not in (0, 1, 2, 3, 4, 5):
+                raise ValueError(f"Unsupported database schema: {version}")
+            # Migrate the old global ticket primary key to episode-local resource IDs.
+            columns = {r["name"] for r in db.execute("PRAGMA table_info(tickets)")}
+            migration = ""
+            if columns and "version" not in columns:
+                migration = "ALTER TABLE tickets RENAME TO legacy_tickets;\n"
+            # executescript implicitly commits an existing transaction. Execute complete
+            # statements ourselves so discovery, migration, and backfill hold one lock.
+            statement = ""
+            for line in (migration + SCHEMA).splitlines(keepends=True):
+                statement += line
+                if sqlite3.complete_statement(statement):
+                    db.execute(statement)
+                    statement = ""
+            if migration:
+                db.execute(
+                    "INSERT INTO tickets(id,episode_id,project_id,title,body,workspace,"
+                    "classification) "
+                    "SELECT t.id,t.episode_id,t.project_id,t.title,t.body,"
+                    "json_extract(e.contract,'$.workspace'),CASE WHEN e.confidential=1 "
+                    "THEN 'confidential' ELSE 'internal' END FROM legacy_tickets t "
+                    "JOIN episodes e ON e.id=t.episode_id"
+                )
+                db.execute("DROP TABLE legacy_tickets")
+            if version < 5:
+                db.execute("DELETE FROM documents_fts")
+                db.execute(
+                    "INSERT INTO documents_fts(rowid,episode_id,document_id,body) "
+                    "SELECT rowid,episode_id,id,json_extract(payload,'$.body') "
+                    "FROM resources WHERE kind='document'"
+                )
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:
@@ -203,6 +273,7 @@ class Store:
         documents: tuple[Document, ...],
         projects: tuple[Project, ...],
         *,
+        tickets: tuple[Ticket, ...] = (),
         experimental_profile: Profile = "defended",
         max_actions: int = 8,
     ) -> str:
@@ -213,6 +284,7 @@ class Store:
                 contract,
                 documents,
                 projects,
+                tickets=tickets,
                 experimental_profile=experimental_profile,
                 max_actions=max_actions,
             )
@@ -224,6 +296,7 @@ class Store:
         documents: tuple[Document, ...],
         projects: tuple[Project, ...],
         *,
+        tickets: tuple[Ticket, ...] = (),
         experimental_profile: Profile = "defended",
         max_actions: int = 8,
     ) -> str:
@@ -248,6 +321,24 @@ class Store:
                     "document" if isinstance(resource, Document) else "project",
                     resource.id,
                     resource.model_dump_json(),
+                ),
+            )
+        for ticket in tickets:
+            if ticket.workspace != contract.workspace or ticket.project_id not in {
+                p.id for p in projects
+            }:
+                raise ValueError("Ticket fixture exceeds episode resources")
+            db.execute(
+                "INSERT INTO tickets VALUES (?,?,?,?,?,?,?,?)",
+                (
+                    ticket.id,
+                    episode_id,
+                    ticket.project_id,
+                    ticket.title,
+                    ticket.body,
+                    ticket.workspace,
+                    ticket.version,
+                    ticket.classification,
                 ),
             )
         return episode_id
@@ -334,27 +425,13 @@ class Store:
                     return Execution.model_validate_json(previous["output"])
 
             contract = TaskContract.model_validate_json(episode["contract"])
-            if isinstance(action, ReadAction):
-                kind, target = "document", action.arguments.document_id
-            else:
-                kind, target = "project", action.arguments.project_id
-            row = db.execute(
-                "SELECT payload FROM resources WHERE episode_id=? AND kind=? AND id=?",
-                (episode_id, kind, target),
-            ).fetchone()
-            resource = None
-            if row:
-                resource = (
-                    Document.model_validate_json(row["payload"])
-                    if kind == "document"
-                    else Project.model_validate_json(row["payload"])
-                )
-            decision = evaluate(
+            state = resolve(db, episode_id, contract, episode["profile"], action)
+            resource = state.resource
+            decision = state.decision(
                 episode_id=episode_id,
                 contract=contract,
                 profile=episode["profile"],
                 action=action,
-                resource=resource,
                 confidential=bool(episode["confidential"]),
             )
             count = db.execute(
@@ -427,6 +504,12 @@ class Store:
                                         "resource": resource.model_dump(mode="json")
                                         if resource
                                         else None,
+                                        "ticket": state.ticket.model_dump(mode="json")
+                                        if state.ticket
+                                        else None,
+                                        "source": state.source.model_dump(mode="json")
+                                        if state.source
+                                        else None,
                                         "policy_version": decision.policy_version,
                                         "confidential": bool(episode["confidential"]),
                                     }
@@ -452,12 +535,7 @@ class Store:
             if decision.outcome == "ALLOW":
                 if computed is None:
                     return Prepared(
-                        request=ToolRequest(
-                            action=action,
-                            document=DocumentSnapshot(id=resource.id, body=resource.body)
-                            if isinstance(resource, Document)
-                            else None,
-                        ),
+                        request=state.request(action),
                         action_hash=decision.action_hash,
                     )
                 validate_result(computed.prepared.request, computed.result)
@@ -470,20 +548,75 @@ class Store:
                     }
                     if resource.classification == "confidential":
                         db.execute("UPDATE episodes SET confidential=1 WHERE id=?", (episode_id,))
-                else:
+                elif isinstance(action, CreateAction):
                     assert isinstance(computed.result, TicketEffect)
                     ticket_id = str(uuid.uuid4())
                     db.execute(
-                        "INSERT INTO tickets VALUES (?,?,?,?,?)",
+                        "INSERT INTO tickets VALUES (?,?,?,?,?,?,?,?)",
                         (
                             ticket_id,
                             episode_id,
                             computed.result.arguments.project_id,
                             computed.result.arguments.title,
                             computed.result.arguments.body,
+                            contract.workspace,
+                            1,
+                            "confidential" if episode["confidential"] else "internal",
                         ),
                     )
                     result = {"ticket_id": ticket_id}
+                elif isinstance(action, SearchAction):
+                    assert isinstance(computed.result, SearchResult)
+                    result = {
+                        "documents": canonical_json(
+                            [hit.model_dump() for hit in computed.result.documents]
+                        )
+                    }
+                elif isinstance(action, ListAction):
+                    assert isinstance(computed.result, ListResult)
+                    result = {
+                        "tickets": canonical_json(
+                            [ticket.model_dump() for ticket in computed.result.tickets]
+                        )
+                    }
+                elif isinstance(action, UpdateAction):
+                    assert isinstance(computed.result, UpdateEffect)
+                    assert state.ticket is not None
+                    args = computed.result.arguments
+                    version = state.ticket.version + 1
+                    db.execute(
+                        "UPDATE tickets SET title=?,body=?,version=?,classification=? "
+                        "WHERE episode_id=? AND id=?",
+                        (
+                            args.title,
+                            args.body,
+                            version,
+                            "confidential"
+                            if state.sensitive or episode["confidential"]
+                            else "internal",
+                            episode_id,
+                            args.ticket_id,
+                        ),
+                    )
+                    result = {"ticket_id": args.ticket_id, "version": str(version)}
+                elif isinstance(action, ShareAction):
+                    assert isinstance(computed.result, ShareEffect)
+                    assert state.source is not None
+                    share_id = str(uuid.uuid4())
+                    db.execute(
+                        "INSERT INTO simulated_shares VALUES (?,?,?,?,?,?)",
+                        (
+                            share_id,
+                            episode_id,
+                            action.arguments.document_id,
+                            action.arguments.project_id,
+                            state.source.version,
+                            computed.result.body,
+                        ),
+                    )
+                    result = {"share_id": share_id}
+                if isinstance(action, (ReadAction, SearchAction, ListAction)) and state.sensitive:
+                    db.execute("UPDATE episodes SET confidential=1 WHERE id=?", (episode_id,))
                 if grant is not None:
                     db.execute("UPDATE approvals SET consumed=1 WHERE id=?", (approval_id,))
 
@@ -535,26 +668,13 @@ class Store:
             ):
                 raise ReviewRejected("Run is terminal or expired")
             action = ACTION_ADAPTER.validate_python(json.loads(row["snapshot"])["action"])
-            kind, target = (
-                ("document", action.arguments.document_id)
-                if isinstance(action, ReadAction)
-                else ("project", action.arguments.project_id)
-            )
-            resource_row = db.execute(
-                "SELECT payload FROM resources WHERE episode_id=? AND kind=? AND id=?",
-                (row["episode_id"], kind, target),
-            ).fetchone()
-            resource = None
-            if resource_row:
-                resource = (Document if kind == "document" else Project).model_validate_json(
-                    resource_row["payload"]
-                )
-            current = evaluate(
+            contract = TaskContract.model_validate_json(episode["contract"])
+            state = resolve(db, row["episode_id"], contract, episode["profile"], action)
+            current = state.decision(
                 episode_id=row["episode_id"],
-                contract=TaskContract.model_validate_json(episode["contract"]),
+                contract=contract,
                 profile=episode["profile"],
                 action=action,
-                resource=resource,
                 confidential=bool(episode["confidential"]),
             )
             if current.action_hash != expected_hash or current.outcome != "REQUIRE_APPROVAL":
@@ -628,6 +748,15 @@ class Store:
                 dict(row)
                 for row in db.execute(
                     "SELECT * FROM tickets WHERE episode_id=? ORDER BY id", (episode_id,)
+                )
+            ]
+
+    def shares(self, episode_id: str) -> list[dict[str, Any]]:
+        with self.connection() as db:
+            return [
+                dict(row)
+                for row in db.execute(
+                    "SELECT * FROM simulated_shares WHERE episode_id=? ORDER BY id", (episode_id,)
                 )
             ]
 

@@ -796,6 +796,27 @@ function RunPanel({
                 </Field>
                 <Field label="Approval expiry">{time(detail.expires_at)}</Field>
               </dl>
+              {detail.snapshot.source && (
+                <details className="scope-details">
+                  <summary>Document to share · {detail.snapshot.source.id}</summary>
+                  <p>
+                    Version {detail.snapshot.source.version} ·{' '}
+                    {detail.snapshot.source.classification}
+                  </p>
+                  <p className="literal">{detail.snapshot.source.body}</p>
+                </details>
+              )}
+              {detail.snapshot.ticket && (
+                <details className="scope-details">
+                  <summary>Current ticket · {detail.snapshot.ticket.id}</summary>
+                  <p>
+                    Version {detail.snapshot.ticket.version} ·{' '}
+                    {detail.snapshot.ticket.classification}
+                  </p>
+                  <p className="literal">{detail.snapshot.ticket.title}</p>
+                  <p className="literal">{detail.snapshot.ticket.body}</p>
+                </details>
+              )}
               <details className="scope-details">
                 <summary>Original task and authorization binding</summary>
                 <p className="literal">{detail.task}</p>

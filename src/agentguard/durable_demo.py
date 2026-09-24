@@ -60,7 +60,9 @@ def run_durable_demo(task_path: Path, output_root: Path) -> Path:
     database = directory / "state.sqlite3"
     store = Store(database, clock=lambda: now[0])
     identity = {"mode": "authored_fixture", "task_sha256": digest(task.model_dump(mode="json"))}
-    episode = store.create_episode(task.contract, task.documents, task.projects)
+    episode = store.create_episode(
+        task.contract, task.documents, task.projects, tickets=task.initial_tickets
+    )
     worker = Worker(store, ScriptedModel(task), model_identity=identity)
     worker.submit(episode, task.task)
     waiting = worker.run_once()

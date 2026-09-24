@@ -37,6 +37,10 @@ else:
                 "UPDATE approvals SET snapshot=? WHERE id=?",
                 (json.dumps(snapshot), row["id"]),
             )
+    elif operation == "count_shares":
+        print(json.dumps({"count": len(control.store.shares(sys.argv[4]))}))
+    elif operation == "tickets":
+        print(json.dumps(control.store.tickets(sys.argv[4])))
     elif operation == "count_tickets":
         with control.store.connection() as db:
             count = db.execute(

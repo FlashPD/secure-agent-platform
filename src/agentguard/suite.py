@@ -153,6 +153,7 @@ def run_suite(
                     task.contract,
                     episode_documents(task, attacked=attacked),
                     task.projects,
+                    tickets=task.initial_tickets,
                     experimental_profile=variant,
                     max_actions=budgets.max_steps,
                 )

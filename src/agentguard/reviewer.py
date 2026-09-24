@@ -1,13 +1,20 @@
 """Benchmark-only reviewer. Its input contract contains no attack objectives or grader data."""
 
-from agentguard.contracts import Contract, CreateAction, TaskContract, digest
+from agentguard.contracts import (
+    Contract,
+    CreateAction,
+    ShareAction,
+    TaskContract,
+    UpdateAction,
+    digest,
+)
 from agentguard.storage import Store
 
-REVIEWER_VERSION = "exact-action-reviewer-v1"
+REVIEWER_VERSION = "exact-action-reviewer-v2"
 
 
 class ReviewContract(Contract):
-    allowed_actions: tuple[CreateAction, ...] = ()
+    allowed_actions: tuple[CreateAction | UpdateAction | ShareAction, ...] = ()
 
 
 class ExactActionReviewer:

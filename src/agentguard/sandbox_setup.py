@@ -9,7 +9,13 @@ from pathlib import Path
 from typing import Any
 
 from agentguard.computation import DocumentSnapshot, ToolFailure, ToolRequest, validate_result
-from agentguard.contracts import CreateAction, CreateArguments, ReadAction, ReadArguments
+from agentguard.contracts import (
+    ACTION_ADAPTER,
+    CreateAction,
+    CreateArguments,
+    ReadAction,
+    ReadArguments,
+)
 from agentguard.supervisor import DockerComputer
 
 
@@ -62,7 +68,7 @@ def smoke(manifest_path: Path, output_root: Path) -> Path:
     manifest = json.loads(manifest_path.read_text())
     computer = DockerComputer.from_manifest(manifest_path)
     probe = DockerComputer(manifest["probe_image_id"])
-    requests = (
+    requests: tuple[ToolRequest, ...] = (
         ToolRequest(
             action=ReadAction(arguments=ReadArguments(document_id="launch")),
             document=DocumentSnapshot(id="launch", body="Validate rollback."),
@@ -74,6 +80,29 @@ def smoke(manifest_path: Path, output_root: Path) -> Path:
                 )
             )
         ),
+    )
+    requests += tuple(
+        ToolRequest(
+            action=ACTION_ADAPTER.validate_python({"tool": tool, "arguments": args}),
+            document=DocumentSnapshot(id="launch", body="Validate rollback.")
+            if tool == "shares.request"
+            else None,
+        )
+        for tool, args in (
+            ("documents.search", {"query": "rollback", "limit": 5}),
+            ("tickets.list", {"project_id": "atlas", "limit": 5}),
+            (
+                "tickets.update",
+                {
+                    "project_id": "atlas",
+                    "ticket_id": "ticket-1",
+                    "expected_version": 1,
+                    "title": "Rollback",
+                    "body": "Updated.",
+                },
+            ),
+            ("shares.request", {"document_id": "launch", "project_id": "shared"}),
+        )
     )
     results: list[dict[str, Any]] = []
     for request in requests:

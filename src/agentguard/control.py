@@ -137,7 +137,12 @@ class ControlPlane:
             if pending >= 32:
                 raise ControlError(429, "PENDING_RUN_LIMIT")
             episode = self.store._create_episode(
-                db, task.contract, task.documents, task.projects, max_actions=self.budgets.max_steps
+                db,
+                task.contract,
+                task.documents,
+                task.projects,
+                tickets=task.initial_tickets,
+                max_actions=self.budgets.max_steps,
             )
             Queue(self.store)._submit(db, episode, task.task, self.budgets, manifest=self.manifest)
             db.execute(
@@ -237,7 +242,9 @@ class ControlPlane:
                             arguments = turn.action.arguments.model_dump()
                             target = arguments.get("document_id", arguments.get("project_id"))
                             entry["target"] = (
-                                target
+                                "permitted documents"
+                                if turn.action.tool == "documents.search"
+                                else target
                                 if target in (*contract.document_ids, *contract.project_ids)
                                 else "[outside task scope]"
                             )

@@ -123,7 +123,7 @@ test('approve the exact action after API restart and commit it once', async ({ p
   await expect(page.getByRole('button', { name: 'Approve exact action' })).toBeDisabled();
   await expect(page.getByText('Office hours are at 15:00 UTC.', { exact: true })).toBeVisible();
   await page.getByText('Original task and authorization binding', { exact: true }).click();
-  await expect(page.getByText('gateway-v1', { exact: true })).toBeVisible();
+  await expect(page.getByText('gateway-v2', { exact: true })).toBeVisible();
   await page.screenshot({ path: join(directory, '../approval-desktop.png'), fullPage: true });
   await stop();
   await expect(page.getByText('Connection interrupted.', { exact: false })).toBeVisible();
@@ -207,6 +207,38 @@ test('hostile approval text is inert and mobile layout stays within the viewport
   await page.screenshot({ path: join(directory, '../approval-mobile.png'), fullPage: true });
   await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm cancellation' }).click();
+});
+
+test('document share exposes exact source and commits only after approval', async ({ page }) => {
+  await login(page);
+  const id = await submit(page, 'reviewed-document-share');
+  expect(JSON.parse(fixture('advance')).status).toBe('WAITING_APPROVAL');
+  await page.getByRole('button', { name: 'Inspect action' }).click();
+  await expect(
+    page.locator('.action-fields').getByText('shares.request', { exact: true }),
+  ).toBeVisible();
+  await page.getByText('Document to share · release', { exact: true }).click();
+  await expect(page.getByText('Release checklist approved.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Version 1 · internal', { exact: true })).toBeVisible();
+  expect(JSON.parse(fixture('count_shares', id)).count).toBe(0);
+  await page.screenshot({ path: join(directory, '../share-approval.png'), fullPage: true });
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Approve exact action' }).click();
+  await expect(page.getByText('Action approved.', { exact: false })).toBeVisible();
+  expect(JSON.parse(fixture('advance')).status).toBe('COMPLETED');
+  expect(JSON.parse(fixture('count_shares', id)).count).toBe(1);
+});
+
+test('listed ticket update finishes with the expected version', async ({ page }) => {
+  await login(page);
+  const id = await submit(page, 'ticket-maintenance');
+  expect(JSON.parse(fixture('advance')).status).toBe('COMPLETED');
+  await expect(
+    page.getByRole('region', { name: 'Selected run' }).getByText('completed', { exact: true }),
+  ).toBeVisible();
+  const tickets = JSON.parse(fixture('tickets', id));
+  expect(tickets.find((ticket: { id: string }) => ticket.id === 'atlas-1').version).toBe(2);
+  expect(tickets.find((ticket: { id: string }) => ticket.id === 'orion-1').version).toBe(1);
 });
 
 test('observer has no review credential and cannot submit or cancel', async ({ page }) => {

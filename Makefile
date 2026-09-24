@@ -20,7 +20,13 @@ ui-check:
 ui-test:
 	cd frontend && npm test
 
-.PHONY: eval-suite eval-suite-live
+.PHONY: eval-suite eval-suite-live eval-tools eval-tools-isolated
+eval-tools:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/tools-v1.json
+
+eval-tools-isolated:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/tools-v1.json --sandbox-manifest artifacts/sandbox/manifest.json
+
 .PHONY: demo-durable
 .PHONY: control-smoke api-serve worker
 control-smoke:

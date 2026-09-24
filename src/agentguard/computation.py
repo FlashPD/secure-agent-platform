@@ -1,10 +1,23 @@
-"""Only validated data crosses the computation boundary; effects stay on the host."""
+"""Only authorized, bounded snapshots cross the computation boundary."""
 
 from typing import Annotated, Literal, Protocol
 
 from pydantic import Field, TypeAdapter
 
-from agentguard.contracts import Action, Contract, CreateArguments, Identifier, ReadAction
+from agentguard.contracts import (
+    Action,
+    Contract,
+    CreateAction,
+    CreateArguments,
+    Identifier,
+    ListAction,
+    ReadAction,
+    SearchAction,
+    ShareAction,
+    ShareArguments,
+    UpdateAction,
+    UpdateArguments,
+)
 
 
 class DocumentSnapshot(Contract):
@@ -12,9 +25,25 @@ class DocumentSnapshot(Contract):
     body: str = Field(max_length=12000)
 
 
+class SearchHit(Contract):
+    document_id: Identifier
+    snippet: str = Field(max_length=512)
+    version: int = Field(ge=1)
+
+
+class TicketPreview(Contract):
+    ticket_id: Identifier
+    project_id: Identifier
+    title: str = Field(max_length=160)
+    body_preview: str = Field(max_length=512)
+    version: int = Field(ge=1)
+
+
 class ToolRequest(Contract):
     action: Action
     document: DocumentSnapshot | None = None
+    documents: tuple[SearchHit, ...] = Field(default=(), max_length=5)
+    tickets: tuple[TicketPreview, ...] = Field(default=(), max_length=5)
 
 
 class DocumentResult(Contract):
@@ -23,12 +52,36 @@ class DocumentResult(Contract):
     body: str = Field(max_length=12000)
 
 
+class SearchResult(Contract):
+    kind: Literal["search"] = "search"
+    documents: tuple[SearchHit, ...] = Field(max_length=5)
+
+
+class ListResult(Contract):
+    kind: Literal["tickets"] = "tickets"
+    tickets: tuple[TicketPreview, ...] = Field(max_length=5)
+
+
 class TicketEffect(Contract):
     kind: Literal["ticket"] = "ticket"
     arguments: CreateArguments
 
 
-ToolResult = Annotated[DocumentResult | TicketEffect, Field(discriminator="kind")]
+class UpdateEffect(Contract):
+    kind: Literal["update"] = "update"
+    arguments: UpdateArguments
+
+
+class ShareEffect(Contract):
+    kind: Literal["share"] = "share"
+    arguments: ShareArguments
+    body: str = Field(max_length=12000)
+
+
+ToolResult = Annotated[
+    DocumentResult | SearchResult | ListResult | TicketEffect | UpdateEffect | ShareEffect,
+    Field(discriminator="kind"),
+]
 RESULT_ADAPTER: TypeAdapter[ToolResult] = TypeAdapter(ToolResult)
 
 
@@ -48,18 +101,41 @@ class Computer(Protocol):
 
 
 def expected_result(request: ToolRequest) -> ToolResult:
-    if isinstance(request.action, ReadAction):
-        if request.document is None or request.document.id != request.action.arguments.document_id:
+    action = request.action
+    if isinstance(action, (ReadAction, ShareAction)):
+        if (
+            request.document is None
+            or request.document.id != action.arguments.document_id
+            or request.documents
+            or request.tickets
+        ):
             raise ToolFailure("INVALID_SNAPSHOT")
-        return DocumentResult(document_id=request.document.id, body=request.document.body)
+        if isinstance(action, ReadAction):
+            return DocumentResult(document_id=request.document.id, body=request.document.body)
+        return ShareEffect(arguments=action.arguments, body=request.document.body)
     if request.document is not None:
         raise ToolFailure("INVALID_SNAPSHOT")
-    return TicketEffect(arguments=request.action.arguments)
+    if isinstance(action, SearchAction):
+        if request.tickets or len(request.documents) > action.arguments.limit:
+            raise ToolFailure("INVALID_SNAPSHOT")
+        return SearchResult(documents=request.documents)
+    if isinstance(action, ListAction):
+        if (
+            request.documents
+            or len(request.tickets) > action.arguments.limit
+            or any(t.project_id != action.arguments.project_id for t in request.tickets)
+        ):
+            raise ToolFailure("INVALID_SNAPSHOT")
+        return ListResult(tickets=request.tickets)
+    if request.documents or request.tickets:
+        raise ToolFailure("INVALID_SNAPSHOT")
+    if isinstance(action, UpdateAction):
+        return UpdateEffect(arguments=action.arguments)
+    assert isinstance(action, CreateAction)
+    return TicketEffect(arguments=action.arguments)
 
 
 def validate_result(request: ToolRequest, result: ToolResult) -> None:
-    # These fixed tools must preserve the authorized target and exact content.
-    # A future transforming tool needs its own validator, not a relaxed version of this one.
     if result != expected_result(request):
         raise ToolFailure("EFFECT_MISMATCH")
 

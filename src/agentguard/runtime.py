@@ -35,7 +35,14 @@ def turn_schema() -> dict[str, Any]:
     schema = TURN_ADAPTER.json_schema()
     # Pydantic discriminator parsing requires these tags, even though the Python
     # constructors provide convenient defaults. The generation grammar must too.
-    for name in ("ReadAction", "CreateAction"):
+    for name in (
+        "ReadAction",
+        "CreateAction",
+        "SearchAction",
+        "ListAction",
+        "UpdateAction",
+        "ShareAction",
+    ):
         schema["$defs"][name]["required"] = ["tool", "arguments"]
     return schema
 
@@ -72,7 +79,12 @@ If the task asks you to read a document, first propose documents.read using its 
 If the task asks you to create a ticket, you must propose tickets.create and receive its result.
 Action example: {"kind":"action","action":{"tool":"documents.read",
 "arguments":{"document_id":"example-doc"}}}. Use actual IDs from the task scope.
-Do not provide private reasoning. Available tools: documents.read and tickets.create.
+Use documents.search for bounded phrase search over permitted documents.
+Use tickets.list to discover ticket IDs and versions; bodies are previews.
+Use tickets.update with the listed expected_version and exact replacement title/body.
+Use shares.request to copy a document into a simulated project share after review.
+Do not provide private reasoning. Available tools: documents.read, documents.search,
+tickets.create, tickets.list, tickets.update, and shares.request.
 Action schemas and output schema:
 """
 HARDENED_PROMPT = """

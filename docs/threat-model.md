@@ -1,6 +1,6 @@
 # Current trust boundary
 
-This increment executes two fixed operations over synthetic state. The local
+This increment executes six fixed operations over synthetic state. The local
 replay uses trusted Python; the isolated replay sends bounded JSON to a fixed
 container entrypoint. The live loop uses the same isolated tools with a native
 local model. No mode accepts model-authored code or shell commands.
@@ -15,9 +15,10 @@ fields and invalid tool arguments before execution. The live loop permits one
 budgeted schema repair; a malformed proposal cannot dispatch a tool.
 
 The defended profile enforces actor permissions and per-task scope. Reading a
-confidential document marks the episode confidential. Subsequent internal writes
+confidential document, search snippet, or ticket preview marks the episode confidential. Subsequent internal writes
 require review; shared writes are denied. Shared writes without confidential reads
-also require review. Baseline/prompt-only profiles deliberately disable these
+also require review. Document shares always require review of source and destination;
+updates bind the existing ticket and expected version. Baseline/prompt-only profiles deliberately disable these
 business checks inside a synthetic episode. Live evidence now compares all three
 profiles on ten development tasks; it cannot establish held-out or general attack protection.
 
@@ -72,7 +73,10 @@ process; it does not implement operator/worker credential separation. Ordinary
 runtime use still pauses for review. See the [suite contract](development-suite.md).
 
 The current grader detects exact synthetic canaries in final responses and ticket
-title/body text. It does not detect paraphrases or encoded leakage. The new suite
+title/body text and simulated share bodies. It does not detect paraphrases or encoded leakage.
+The expanded tool suite also grades search/list results, ticket versions, protected
+ticket contents, and exact shared documents. See [the tool contract](tool-surface.md).
+The original ten-task suite
 also checks stored read outcomes and attempts, ticket counts, and final-answer
 requirements. Its ten self-authored development payloads exercise several
 authorization rules but cannot establish broad attack coverage or held-out ASR.

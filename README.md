@@ -1,8 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
 **Status: ten-task live feasibility, durable execution, the authenticated local API,
-and the interactive operator console are implemented. Tool expansion and the
-held-out portfolio release remain in progress.**
+the operator console, and all six planned tools are implemented. Fresh evaluation
+of the expanded tool surface and the held-out portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -159,6 +159,25 @@ not a held-out release benchmark or proof of zero attack risk. Inspect the
 [paired analysis](docs/evidence/ten-task-live-2026-09-23/analysis/analysis.md),
 and [five-minute walkthrough](docs/reviewer-walkthrough.md).
 
+## Expanded tool workflows
+
+Document search, ticket listing and versioned updates, and reviewed document sharing
+now use the same gateway and transactional effect boundary. Shares write only to an
+episode-local simulated sink. The console displays the exact source document or
+current ticket when reviewing these actions.
+
+```sh
+make eval-tools             # 24 authored episodes; zero model trials
+make sandbox-build          # Rebuild the fixed tool image after upgrading
+make eval-tools-isolated    # The same workflows through Docker
+```
+
+The [tool contract and upgrade runbook](docs/tool-surface.md) covers filtering,
+version checks, approvals, migration, and the four new development tasks. New
+console installations offer all 14 development scenarios. See the
+[scripted tool-surface evidence](docs/evidence/tool-surface-2026-09-23/README.md).
+The ten-task live results above predate the expanded schema and remain unchanged.
+
 ## Implemented boundaries
 
 - Typed tool proposals cannot supply actor identity, scope, or approval grants.
@@ -193,6 +212,6 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: extend the remaining four tools and their policy/grading coverage. The
-portfolio release requires live paired results and the full acceptance criteria
-in the architecture plan; those outcomes have not been measured yet.
+Next: measure fresh local-model performance across the expanded tools, then grow
+and freeze the development/held-out benchmark. The portfolio release still
+requires the full acceptance criteria in the architecture plan.
