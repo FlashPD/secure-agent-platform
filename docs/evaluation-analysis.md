@@ -1,6 +1,6 @@
 # Offline paired analysis
 
-`agentguard eval-analyze` analyzes one completed ten-task development-suite run.
+`agentguard eval-analyze` analyzes one completed development-suite run.
 It works with existing replay or live bundles, without starting Docker or the model:
 
 ```sh
@@ -15,7 +15,8 @@ The original evidence is never rewritten. Default bootstrap settings are 5,000
 resamples with seed 42; `--resamples` and `--seed` record explicit alternatives.
 
 Open `explorer.html` in a browser for a standalone comparison of any task's clean
-or attacked episodes under two profiles. It shows original task text, tool
+or attacked episodes under two profiles, with a selector for each attack variant.
+It shows original task text, tool
 proposals, decisions, simulated reviews, final model claims, and independent
 state grades. All assets are embedded; the viewer makes no network requests.
 Untrusted text is assigned through DOM `textContent`; embedded JSON escapes HTML
@@ -33,15 +34,17 @@ the manifest. These checks detect accidental alteration and inconsistent bundles
 They do not authenticate an operator who can replace files and their hashes.
 
 Each scheduled episode must have exactly one result with the same episode ID,
-task, profile, and input type. The current schema requires one clean and one
-attacked episode per task and profile. Missing results, duplicates, altered
+task, profile, input type, and attack ID. Run-manifest schema 2 requires one clean
+episode and every declared attack per task/profile. Its attack catalogue must
+match the pinned fixture snapshots. Legacy schema 1 runs remain readable as one
+primary attack per task/profile. Missing results, duplicates, altered
 identities, invalid grades, or success attributed to an unfinished episode make
 the analysis unusable. The CLI exits nonzero and writes no analysis. Use
 `eval-resume` to account for interruptions and finish the original schedule before
 analysis; this command does not invent missing grades or resume inference.
 Interrupted duration is null and excluded from timing summaries, with the unknown
-count retained. Multi-payload/repetition suites will
-need a new observation schema before they can use this analyzer.
+count retained. See [multiple-attack contracts and the pilot](multi-attack-evaluation.md).
+Repeated seeds still need a separate observation schema.
 
 All counts are recalculated from episode observations, independently of the
 report's summary counts. Failed, cancelled, budget-exhausted, and approval-waiting
@@ -56,11 +59,14 @@ Every pair of profiles receives:
 - Clean utility, attacked utility, and observed attack-success differences,
   expressed as treatment minus reference.
 - Conditional observed attack success on the common set of tasks that both
-  profiles solved cleanly. Included and excluded task IDs are exported. With no
+  profiles solved cleanly, including all their attack variants. Included and
+  excluded task IDs are exported; the rate denominator counts attack episodes. With no
   common clean successes, the rate is undefined (`null`), never zero.
 - Descriptive 95% paired percentile bootstrap intervals for fresh inference.
-  Each draw resamples task IDs with replacement, keeping clean/attacked results
-  and every profile together. Shared draws preserve pairing across treatments.
+  Each draw resamples task IDs with replacement, keeping the clean result, every
+  attack variant, and every profile together. Shared draws preserve pairing across
+  treatments. Ratios use summed numerators and denominators within each draw;
+  tasks with more payloads retain their episode weight.
 
 Absolute rates include raw numerators and denominators. Reports also retain
 status counts, unresolved attacks, simulated review counts, generated tokens,
@@ -71,7 +77,7 @@ automatically classify a final response as a false completion claim.
 
 ## Interpretation limits
 
-Ten self-authored development tasks, one payload and one trial each, are too
+Self-authored development tasks and a small set of fixed payloads are too
 limited for a release-security claim. Task bootstrap intervals describe variation
 in these fixtures. They do not estimate uncertainty over new attack families or
 repeat sampling from the model. A degenerate interval, including `[0, 0]` for no

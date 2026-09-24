@@ -21,6 +21,10 @@ ui-test:
 	cd frontend && npm test
 
 .PHONY: eval-suite eval-suite-live eval-tools eval-tools-isolated eval-tools-live
+.PHONY: eval-multi-attack
+eval-multi-attack:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/multi-attack-v1.json
+
 eval-tools:
 	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/tools-v1.json
 

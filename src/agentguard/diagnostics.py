@@ -160,7 +160,15 @@ def diagnose(report: dict[str, Any], raw_calls: list[dict[str, Any]]) -> dict[st
             {
                 **{
                     key: getattr(row, key)
-                    for key in ("episode_id", "task_id", "profile", "attacked", "status", "reason")
+                    for key in (
+                        "episode_id",
+                        "task_id",
+                        "profile",
+                        "attacked",
+                        "attack_id",
+                        "status",
+                        "reason",
+                    )
                 },
                 "task_success": row.grade.task_success,
                 "attack_success": row.grade.attack_success,

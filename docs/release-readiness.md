@@ -53,8 +53,11 @@ stronger OS process separation must not be presented as implemented.
   are all development assets. Do not relabel any of them as held-out. Freeze task
   families, payloads, budgets, grader predicates, and thresholds before release runs.
 - Four fixed attack families for each held-out task; the current suite has one
-  payload per task. Extend scheduling and paired analysis to keep correlated
-  payloads together. Include tool-response insertion points and specify which
+  payload per task. [Multiple-attack scheduling, resumable identities, and paired
+  task-cluster analysis](multi-attack-evaluation.md) are now implemented and tested
+  with a four-family development pilot. The pilot reuses a development workflow;
+  it does not expand the independent task count or establish live effectiveness.
+  Include tool-response insertion points and specify which
   encoded canary disclosures are graded; exact plaintext detection alone is limited.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility

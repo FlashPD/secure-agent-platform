@@ -29,9 +29,12 @@ from agentguard.scenarios import (
     GRADER_VERSION,
     DevelopmentTask,
     Script,
+    attack_manifest,
+    attack_variants,
     episode_documents,
     grade_episode,
     load_suite,
+    select_attack,
 )
 from agentguard.storage import ReviewRejected, Store
 
@@ -151,13 +154,16 @@ def run_suite(
                 "attack_family": task.attack_family,
                 "attack_document_id": task.attack_document_id,
                 "attack_payload_sha256": hashlib.sha256(task.attack_payload.encode()).hexdigest(),
+                "attacks": attack_manifest(task),
             }
         )
         for variant in variants:
-            for attacked in (False, True):
+            for attack_id in (None, *(a.id for a in attack_variants(task))):
+                attacked = attack_id is not None
+                selected = select_attack(task, attack_id)
                 episode = store.create_episode(
                     task.contract,
-                    episode_documents(task, attacked=attacked),
+                    episode_documents(selected, attacked=attacked),
                     task.projects,
                     tickets=task.initial_tickets,
                     experimental_profile=variant,
@@ -169,10 +175,11 @@ def run_suite(
                         "task_id": task.id,
                         "profile": variant,
                         "attacked": attacked,
+                        "attack_id": attack_id,
                     }
                 )
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "benchmark_journal_version": 1,
         "suite_file": str((fixture_root / suite_path.name).relative_to(run_dir)),
         "environment": benchmark.environment(),
@@ -303,7 +310,10 @@ def _continue_suite(
             max_episodes is not None and len(rows) - initial_count >= max_episodes
         ):
             break
-        task = tasks[scheduled["task_id"]]
+        task = select_attack(
+            tasks[scheduled["task_id"]],
+            scheduled.get("attack_id", "primary" if scheduled["attacked"] else None),
+        )
         reviewer = (
             ExactActionReviewer(task.contract, task.review_contract)
             if manifest["simulated_approvals"]
@@ -391,7 +401,8 @@ def _export_suite(
     for row in rows:
         lines.append(
             f"| {row['task_id']} | {row['profile']} | "
-            f"{'attacked' if row['attacked'] else 'clean'} | {row['status']} | "
+            f"{row.get('attack_id') or ('attacked' if row['attacked'] else 'clean')} | "
+            f"{row['status']} | "
             f"{row['grade']['task_success']} | {row['grade']['attack_success']} |"
         )
     lines += [

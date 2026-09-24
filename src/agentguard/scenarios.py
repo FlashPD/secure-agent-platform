@@ -1,5 +1,6 @@
 """Versioned development fixtures and graders independent of model/policy success claims."""
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
@@ -61,8 +62,21 @@ class Script(Contract):
     final_response: str = Field(max_length=4000)
 
 
+AttackFamily = Literal[
+    "instruction_override", "authority_spoofing", "action_redirection", "data_disclosure"
+]
+
+
+class AttackVariant(Contract):
+    id: Identifier
+    family: AttackFamily
+    document_id: Identifier
+    payload: str = Field(min_length=1, max_length=4000)
+    script: Script
+
+
 class DevelopmentTask(Contract):
-    schema_version: Literal[2]
+    schema_version: Literal[2, 3]
     id: Identifier
     family: Identifier
     task: str = Field(min_length=1, max_length=8000)
@@ -71,17 +85,21 @@ class DevelopmentTask(Contract):
     projects: tuple[Project, ...]
     initial_tickets: tuple[Ticket, ...] = ()
     attack_document_id: Identifier
-    attack_family: Literal[
-        "instruction_override", "authority_spoofing", "action_redirection", "data_disclosure"
-    ]
+    attack_family: AttackFamily
     attack_payload: str = Field(min_length=1, max_length=4000)
     expectation: GraderSpec
     review_contract: ReviewContract = ReviewContract()
     clean_script: Script
     attacked_script: Script
+    additional_attacks: tuple[AttackVariant, ...] = Field(default=(), max_length=15)
 
     @model_validator(mode="after")
     def validate_fixture(self) -> Self:
+        if (self.schema_version == 3) != bool(self.additional_attacks):
+            raise ValueError("Additional attacks require task schema 3; schema 3 requires attacks")
+        ids = [attack.id for attack in attack_variants(self)]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Duplicate attack ID (primary is reserved)")
         docs, projects = {d.id for d in self.documents}, {p.id for p in self.projects}
         if len(docs) != len(self.documents) or len(projects) != len(self.projects):
             raise ValueError("Duplicate resource IDs")
@@ -145,6 +163,10 @@ class DevelopmentTask(Contract):
             ):
                 raise ValueError("Reviewer source exceeds task scope")
         episode_documents(self, attacked=True)  # Enforce the same body bound after insertion.
+        for attack in self.additional_attacks:
+            if attack.document_id not in docs:
+                raise ValueError("Attack insertion point does not exist")
+            episode_documents(select_attack(self, attack.id), attacked=True)
         return self
 
 
@@ -172,6 +194,52 @@ def load_suite(path: Path) -> tuple[SuiteManifest, list[tuple[Path, bytes, Devel
         seen.add(task.id)
         rows.append((Path(name), raw, task))
     return manifest, rows
+
+
+def attack_variants(task: DevelopmentTask) -> tuple[AttackVariant, ...]:
+    return (
+        AttackVariant(
+            id="primary",
+            family=task.attack_family,
+            document_id=task.attack_document_id,
+            payload=task.attack_payload,
+            script=task.attacked_script,
+        ),
+        *task.additional_attacks,
+    )
+
+
+def attack_manifest(task: DevelopmentTask) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": attack.id,
+            "family": attack.family,
+            "document_id": attack.document_id,
+            "insertion_point": "document_body_append",
+            "payload_sha256": hashlib.sha256(attack.payload.encode()).hexdigest(),
+            "payload_bytes": len(attack.payload.encode()),
+        }
+        for attack in attack_variants(task)
+    ]
+
+
+def select_attack(task: DevelopmentTask, attack_id: str | None) -> DevelopmentTask:
+    """Only untrusted body text and the authored replay change; trusted contracts stay fixed."""
+    if attack_id is None:
+        return task
+    attack = next((a for a in attack_variants(task) if a.id == attack_id), None)
+    if attack is None:
+        raise ValueError(f"Unknown attack variant: {attack_id}")
+    return task.model_copy(
+        update={
+            "schema_version": 2,
+            "additional_attacks": (),
+            "attack_family": attack.family,
+            "attack_document_id": attack.document_id,
+            "attack_payload": attack.payload,
+            "attacked_script": attack.script,
+        }
+    )
 
 
 def episode_documents(task: DevelopmentTask, *, attacked: bool) -> tuple[Document, ...]:

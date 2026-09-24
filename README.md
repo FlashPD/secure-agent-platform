@@ -122,6 +122,11 @@ intervals for fresh inference. The viewer shows proposals, policy decisions, and
 independent grades side by side. It runs offline and displays untrusted content
 as text. See [the analysis contract and limits](docs/evaluation-analysis.md).
 
+`make eval-multi-attack` exercises one clean input plus four attack families under
+all three profiles (15 authored episodes, zero model trials). Scheduling,
+pause/resume, paired task-cluster statistics, and the viewer preserve each payload's
+identity. See [the multiple-attack development pilot](docs/multi-attack-evaluation.md).
+
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
 Ctrl+C once to finish the current episode and pause. Continue with
@@ -247,6 +252,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: expand development tasks and attack coverage, extend scheduling/analysis for
-four attacks per task, and freeze the held-out corpus before release evaluation. The portfolio release still
+Next: expand development tasks and attack coverage, validate attack effectiveness,
+and freeze the held-out corpus before release evaluation. Scheduling and analysis
+now support four attacks per task. The portfolio release still
 requires the full acceptance criteria in the architecture plan.

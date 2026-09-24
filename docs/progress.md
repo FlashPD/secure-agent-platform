@@ -267,11 +267,28 @@ between episodes, not live mid-episode crash recovery. The four newer tool-workf
 attacks still show no observed wins in any profile. No held-out release gate has
 passed, and earlier versioned studies remain unchanged. Packaging performed no inference.
 
+## Thirteenth increment: multiple attacks per task
+
+- [x] Add versioned, bounded attack variants without changing trusted task/reviewer/grader contracts.
+- [x] Schedule one clean control and every declared payload per profile, with payload provenance.
+- [x] Preserve attack identity and committed effects across pauses and interrupted-trial accounting.
+- [x] Reject dropped/substituted variants and catalogue/fixture mismatches; retain legacy evidence support.
+- [x] Keep correlated payloads together in paired task bootstrap draws, including unequal payload counts.
+- [x] Add attack selection to the offline viewer and payload IDs to failure/diagnostic records.
+- [x] Add a four-family development pilot with 15 authored episodes and no inference.
+- [x] Pass the Python suite and new integrity/outage regressions, lint/format/type checks,
+  TypeScript checks, and two Chrome checks covering every payload and legacy reports.
+
+See [contracts, reproduction, and limits](multi-attack-evaluation.md). This reuses
+the confidential-review workflow; the independent development catalogue remains
+fourteen tasks. New payload effectiveness under fresh inference is unmeasured.
+The original published runs and grades are unchanged.
+
 ## Next increment: corpus quality and release evaluation
 
 Expand from fourteen to twenty development workflows with effective, varied
-attacks and explicit task/grader contracts. Extend scheduling/analysis for multiple
-attack variants. Then freeze forty held-out workflows and their
+attacks and explicit task/grader contracts. Validate the new attack variants with
+fresh inference. Then freeze forty held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).
 

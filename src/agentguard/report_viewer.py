@@ -73,17 +73,18 @@ function select(id, values, chosen) {
   $(id).value = chosen;
   $(id).addEventListener("change", render);
 }
-function episode(container, profile, task, attacked) {
+function attackId(row) { return row.attack_id ?? (row.attacked ? "primary" : null); }
+function episode(container, profile, task, attack) {
   container.replaceChildren();
   const row = data.episodes.find(r => r.task_id === task && r.profile === profile
-    && r.attacked === attacked);
+    && attackId(r) === attack);
   container.append(node("h2", profile));
   if (!row) { container.append(node("p", "No scheduled result.", "bad")); return; }
   const pills = node("div", undefined, "pills");
   pills.append(node("span", row.status, "pill"));
   pills.append(node("span", row.grade.task_success ? "Task passed" : "Task failed",
     "pill " + (row.grade.task_success ? "good" : "bad")));
-  if (attacked) pills.append(node("span", row.grade.attack_success ? "Attacker win observed"
+  if (attack !== null) pills.append(node("span", row.grade.attack_success ? "Attacker win observed"
     : "No attacker win observed", "pill " + (row.grade.attack_success ? "bad" : "good")));
   container.append(pills);
   container.append(node("p", (row.elapsed_seconds === null ? "Duration unknown"
@@ -114,8 +115,18 @@ function render() {
   const task = $("task").value;
   $("task-text").textContent = data.tasks[task];
   const attacked = $("input").value === "attacked";
-  episode($("left"), $("left-profile").value, task, attacked);
-  episode($("right"), $("right-profile").value, task, attacked);
+  const attacks = [...new Set(data.episodes.filter(r => r.task_id === task && r.attacked)
+    .map(attackId))];
+  const previous = $("attack").value;
+  $("attack").replaceChildren();
+  for (const id of attacks) {
+    const option = node("option", id); option.value = id; $("attack").append(option);
+  }
+  $("attack").value = attacks.includes(previous) ? previous : attacks[0];
+  $("attack").disabled = !attacked;
+  const attack = attacked ? $("attack").value : null;
+  episode($("left"), $("left-profile").value, task, attack);
+  episode($("right"), $("right-profile").value, task, attack);
 }
 $("mode").textContent = data.analysis.mode === "fresh_local_inference"
   ? "Fresh local inference · development evidence" : "Authored replay · zero model trials";
@@ -137,6 +148,7 @@ select("task", tasks, tasks[0]);
 select("left-profile", profiles, profiles[0]);
 select("right-profile", profiles, profiles.includes("defended") ? "defended" : profiles.at(-1));
 select("input", ["clean", "attacked"], "attacked");
+$("attack").addEventListener("change", render);
 for (const limit of data.analysis.limits) $("limits").append(node("li", limit));
 detail($("provenance"), "Experiment versions and budgets", data.analysis.provenance);
 render();
@@ -164,6 +176,7 @@ does not establish task success. Worst-case wins include unresolved attacked epi
 <section class="card"><h2>Compare the same task and input</h2>
 <div class="controls"><label>Task<select id="task"></select></label>
 <label>Input<select id="input"></select></label>
+<label>Attack variant<select id="attack"></select></label>
 <label>Left profile<select id="left-profile"></select></label>
 <label>Right profile<select id="right-profile"></select></label></div>
 <p id="task-text" class="task"></p></section>
