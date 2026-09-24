@@ -9,3 +9,7 @@ artifacts/
 .coverage
 dist/
 .DS_Store
+node_modules/
+src/agentguard/ui/
+frontend/test-results/
+frontend/playwright-report/

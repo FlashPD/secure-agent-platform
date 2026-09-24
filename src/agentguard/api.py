@@ -5,6 +5,7 @@ import hashlib
 import secrets
 import sqlite3
 from collections import Counter
+from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import urlsplit
 
@@ -18,6 +19,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from agentguard.contracts import Contract
 from agentguard.control import ControlError, ControlPlane, Principal, ReviewAction, SubmitRun
 from agentguard.storage import ReviewRejected
+from agentguard.ui import UI_SECURITY_HEADERS, install_ui
 
 SECURITY_HEADERS = {
     "cache-control": "no-store",
@@ -56,7 +58,14 @@ class Credentials(Contract):
 class SecurityBoundary:
     """Check exact Host/Origin, bearer authority, CSRF header and actual body size."""
 
-    def __init__(self, app: ASGIApp, *, credentials: Credentials, origin: str):
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        credentials: Credentials,
+        origin: str,
+        public_paths: frozenset[str] = frozenset(),
+    ):
         parsed = urlsplit(origin)
         if (
             parsed.scheme != "http"
@@ -70,16 +79,19 @@ class SecurityBoundary:
         ):
             raise ValueError("Control plane requires http://127.0.0.1:<port>")
         self.app, self.credentials, self.origin, self.host = app, credentials, origin, parsed.netloc
+        self.public_paths = public_paths
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
 
+        public = scope["method"] in {"GET", "HEAD"} and scope["path"] in self.public_paths
+
         async def secure_send(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
-                headers.update(SECURITY_HEADERS)
+                headers.update(UI_SECURITY_HEADERS if public else SECURITY_HEADERS)
             await send(message)
 
         async def reject(status: int, code: str) -> None:
@@ -109,6 +121,9 @@ class SecurityBoundary:
             "sec-fetch-site"
         ) not in (None, "same-origin", "none"):
             await reject(403, "CROSS_ORIGIN_FORBIDDEN")
+            return
+        if public:
+            await self.app(scope, receive, secure_send)
             return
         authorization = headers.get("authorization", "")
         if not authorization.startswith("Bearer ") or not 32 <= len(authorization) <= 512:
@@ -158,9 +173,18 @@ class SecurityBoundary:
         await self.app(scope, buffered_receive, secure_send)
 
 
-def create_app(control: ControlPlane, credentials: Credentials, *, origin: str) -> FastAPI:
+def create_app(
+    control: ControlPlane,
+    credentials: Credentials,
+    *,
+    origin: str,
+    ui_directory: Path | None = None,
+) -> FastAPI:
     app = FastAPI(title="AgentGuard control plane", docs_url=None, redoc_url=None, openapi_url=None)
-    app.add_middleware(SecurityBoundary, credentials=credentials, origin=origin)
+    public_paths = install_ui(app, ui_directory or Path(__file__).with_name("ui"))
+    app.add_middleware(
+        SecurityBoundary, credentials=credentials, origin=origin, public_paths=public_paths
+    )
 
     @app.exception_handler(ControlError)
     async def control_error(request: Request, exc: ControlError) -> JSONResponse:

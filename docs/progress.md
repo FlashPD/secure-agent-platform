@@ -160,23 +160,47 @@ live evidence is unchanged. No fresh model evaluation is claimed for this increm
 
 See the [API runbook and trust boundaries](control-plane.md). HTTP authority is
 separated; the API and worker still share the trusted local OS user and SQLite.
-The existing live evaluation evidence is unchanged. There is no browser approval
-UI, production identity provider, or hardened worker process isolation yet.
+At this milestone, the browser UI was still pending. The existing live evaluation
+evidence is unchanged. Production identity and hardened worker isolation remain out
+of scope for this increment.
 
-## Next increment: interactive operator UI
+## Eighth increment: interactive operator console
 
-1. Build the scenario picker and redacted execution timeline against the authenticated API.
-2. Display exact review scope, expiry, and resource versions with explicit approve/reject.
-3. Test browser escaping, credential handling, stale review errors, and restart behavior.
+- [x] Build a React/TypeScript UI served by FastAPI from the same loopback origin.
+- [x] Add task selection, owner-scoped recent runs, redacted timelines, and confirmed cancellation.
+- [x] Display exact action arguments, original task/scope, policy, resource version,
+  expiry, and hash with explicit approve/reject; never render approval nonces.
+- [x] Keep bearer credentials only in tab memory; clear sessions on disconnect/reload,
+  abort requests, and discard late responses. Observer sessions remain read-only.
+- [x] Preserve submission identity after a lost response. Never automatically retry
+  review decisions or replace the action snapshot being inspected.
+- [x] Serve only an exact compiled-asset allowlist; preserve Host/Origin and API
+  authentication checks, strict CSP, no-store responses, and escaped content.
+- [x] Pass 267 Python tests and nine real Chrome workflow/security scenarios,
+  including API restart, stale/expired approvals, hostile content, and mobile layout.
+- [x] Pass Python/TypeScript/format checks; verify the wheel includes and serves
+  UI assets while excluding credentials and local artifacts.
+- [x] Add locked frontend dependencies, license metadata, a browser CI job,
+  the operator runbook, and sanitized screenshots.
 
-Extend coverage to the remaining four planned tools during platform work. The
-static report viewer does not replace the authenticated application/approval UI.
+See the [operator UI runbook](operator-ui.md) and
+[verification screenshots](evidence/operator-ui-2026-09-23/README.md).
+These are authored-fixture browser
+checks with real API/worker processes, not fresh model trials or a human-usability
+study. Independent paired grades remain in the offline report viewer. No live
+benchmark result changed, and the held-out release gate is still pending.
+
+## Next increment: complete the tool surface
+
+Implement `documents.search`, `tickets.list`, `tickets.update`, and `shares.request`
+with corresponding scope, policy, isolated computation, transactional effect,
+and independent grader coverage before expanding/freezing the release benchmark.
 
 ## Later milestones
 
 The remaining work follows the architecture plan: all six tools;
 stronger operator/worker isolation;
-approval UI and execution timeline; paired held-out evaluation and uncertainty;
+paired held-out evaluation and uncertainty;
 recovery/isolation checks; frozen held-out benchmark; portfolio recording and release.
 
 Direct `Store.review()` remains a trusted library call; authentication applies to

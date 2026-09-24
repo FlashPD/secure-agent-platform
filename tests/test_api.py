@@ -546,3 +546,89 @@ def test_unknown_failure_text_and_out_of_scope_targets_are_redacted(service):
     assert canary not in detail.text + timeline.text
     assert detail.json()["result"]["reason"] == "FAILURE_REDACTED"
     assert timeline.json()[0]["target"] == "[outside task scope]"
+
+
+@pytest.fixture
+def public_ui(service, tmp_path):
+    _, control, _, _, credentials = service
+    directory = tmp_path / "ui"
+    (directory / "assets").mkdir(parents=True)
+    (directory / "index.html").write_text('<div id="root"></div>')
+    (directory / "assets/app.js").write_text("document.title = 'AgentGuard';")
+    (directory / "assets/app.css").write_text("body { margin: 0; }")
+    (directory / "assets/private.json").write_text('{"secret": "private"}')
+    outside = tmp_path / "outside.js"
+    outside.write_text("secret")
+    (directory / "assets/link.js").symlink_to(outside)
+    app = create_app(control, credentials, origin=ORIGIN, ui_directory=directory)
+    with TestClient(app, base_url=ORIGIN) as client:
+        yield client, directory
+
+
+def test_public_ui_serves_only_compiled_shell_with_strict_csp(public_ui):
+    client, _ = public_ui
+    for path in ("/", "/assets/app.js", "/assets/app.css"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert response.headers["cache-control"] == "no-store"
+        csp = response.headers["content-security-policy"]
+        assert "script-src 'self'" in csp
+        assert "connect-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp
+        assert "unsafe-inline" not in csp and "unsafe-eval" not in csp
+    assert client.head("/").status_code == 200
+    assert client.get("/api/identity").status_code == 401
+    authenticated = client.get("/api/identity", headers={"Authorization": f"Bearer {OPERATOR}"})
+    assert authenticated.status_code == 200
+    assert authenticated.headers["content-security-policy"] == (
+        "default-src 'none'; frame-ancestors 'none'"
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/assets/private.json",
+        "/assets/link.js",
+        "/assets/unknown.js",
+        "/assets/%2e%2e/credentials.json",
+        "/assets/%2fapi/identity",
+        "/index.html",
+        "/api/runs",
+    ],
+)
+def test_public_allowlist_does_not_expose_other_files_or_routes(public_ui, path):
+    client, _ = public_ui
+    response = client.get(path)
+    assert response.status_code == 401
+    assert "secret" not in response.text
+
+
+def test_public_ui_still_rejects_cross_origin_hosts_and_writes(public_ui):
+    client, _ = public_ui
+    for path in ("/", "/assets/app.js"):
+        assert client.get(path, headers={"Host": "attacker.test"}).status_code == 400
+        assert client.get(path, headers={"Origin": "https://attacker.test"}).status_code == 403
+        assert client.get(path, headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+        assert client.post(path, json={}).status_code == 401
+
+
+def test_static_symlink_swap_is_checked_at_request_time(public_ui, tmp_path):
+    client, directory = public_ui
+    asset = directory / "assets/app.js"
+    asset.unlink()
+    outside = tmp_path / "sensitive.js"
+    outside.write_text("private contents")
+    asset.symlink_to(outside)
+    response = client.get("/assets/app.js")
+    assert response.status_code == 503
+    assert "private contents" not in response.text
+
+
+def test_unbuilt_ui_has_setup_hint_without_disabling_api_auth(service, tmp_path):
+    _, control, _, _, credentials = service
+    app = create_app(control, credentials, origin=ORIGIN, ui_directory=tmp_path / "unbuilt")
+    with TestClient(app, base_url=ORIGIN) as client:
+        assert client.get("/").status_code == 503
+        assert "make ui-setup ui-build" in client.get("/").text
+        assert client.get("/api/runs").status_code == 401

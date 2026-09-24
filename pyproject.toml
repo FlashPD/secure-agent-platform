@@ -17,6 +17,9 @@ dependencies = [
 [project.scripts]
 agentguard = "agentguard.cli:app"
 
+[tool.hatch.build.targets.wheel]
+artifacts = ["src/agentguard/ui/**"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3,<10",

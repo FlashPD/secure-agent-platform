@@ -5,8 +5,8 @@ replay uses trusted Python; the isolated replay sends bounded JSON to a fixed
 container entrypoint. The live loop uses the same isolated tools with a native
 local model. No mode accepts model-authored code or shell commands.
 The local authenticated control plane exposes defended task selection, redacted
-inspection, cancellation, and approval review. The interactive approval UI is still
-pending. Completed suite reports have a standalone, read-only browser viewer.
+inspection, cancellation, and approval review through the same-origin operator UI.
+Completed suite reports also have a standalone, read-only browser viewer.
 
 Trusted inputs are the fixture contract, resource metadata/ACLs, policy code,
 selected experiment profile, operator review, and grader predicates. Document
@@ -57,8 +57,12 @@ Exact Host/Origin and Fetch Metadata checks, custom mutation headers, JSON-only
 bounded bodies, and non-cacheable responses constrain browser requests. The service
 has no cookies, permissive CORS, or trusted proxy headers. Status/timeline endpoints
 omit raw responses, free text, approval nonces, and lease tokens. Exact canonical
-action content is intentionally available to the owning reviewer. A future UI must
-still escape it. See [the API contract and tests](control-plane.md).
+action content is intentionally available to the owning reviewer. The UI renders
+it as text under a restrictive CSP. Only the compiled shell/assets are public;
+API authentication and host/origin checks remain active. Credentials live only in
+tab memory; logout aborts requests and clears the view. The UI does not silently
+replace inspected snapshots or retry reviews. See [the API contract](control-plane.md)
+and [browser boundary and tests](operator-ui.md).
 
 The ten-task development benchmark can opt into an exact-action reviewer
 simulator. Its predeclared allowlist and task contract are trusted; it receives
@@ -100,9 +104,9 @@ viewer escapes embedded JSON delimiters and writes document/model content only
 through DOM text APIs. Its content security policy limits executable code and
 styles to the bundled hashes and denies network connections. It exposes no tool
 execution, approval, authentication, or service endpoint. Its rendering tests are
-separate from the control-plane authentication/CSRF tests and the future UI tests.
+separate from the control-plane authentication/CSRF and operator UI tests.
 
 Not implemented: immediate in-flight cancellation, model-failure retries,
-interactive approval UI, hardened worker isolation, or hosted multi-tenancy.
+hardened worker isolation, or hosted multi-tenancy.
 The control plane is limited to trusted loopback use. The local inference
 server has no business credentials; its built-in agent tools and browser UI are disabled.

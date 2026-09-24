@@ -1,8 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: ten-task live feasibility, the durable worker, and authenticated local API
-are implemented, with paired analysis and tested crash recovery. The interactive
-approval UI and portfolio release remain in progress.**
+**Status: ten-task live feasibility, durable execution, the authenticated local API,
+and the interactive operator console are implemented. Tool expansion and the
+held-out portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -47,7 +47,7 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. The interactive approval UI remains to be implemented.
+success rate. The browser console is described below.
 
 `make demo-durable` demonstrates a persisted approval wait, simulated review,
 an interruption after ticket commit, and recovery without a duplicate ticket.
@@ -58,15 +58,22 @@ See the [durable execution runbook and limits](docs/durable-execution.md).
 
 The authenticated API supports defended task submission, owner-scoped status and
 redacted timelines, cancellation, and exact-action review. Start the scripted
-application locally, with API and worker in separate terminals:
+application locally, with API and worker in separate terminals. Building the
+React/TypeScript UI also requires Node.js 24 LTS:
 
 ```sh
+make ui-setup ui-build
 uv run --locked agentguard control-init --fixture
 make api-serve       # Terminal 1: loopback-only API
 make worker          # Terminal 2: durable worker, no operator credential file
 ```
 
-Follow the [control-plane runbook](docs/control-plane.md) to submit and review a task.
+Open `http://127.0.0.1:8000/`, connect using the token in
+`artifacts/control/operator.token`, and choose **authorized shared write** to
+review an exact action. If control settings already exist, skip initialization.
+The console supports task selection, redacted timelines, approval/rejection,
+cancellation, and observer access. See the [operator UI runbook](docs/operator-ui.md)
+or use the [control-plane API client](docs/control-plane.md).
 `make control-smoke` verifies real HTTP authentication and API restart during an
 approval wait with separate worker processes. Fixture runs are labeled and perform
 zero model trials; omit `--fixture` when initializing a separate live instance.
@@ -174,6 +181,8 @@ concurrent retries, cancellation, and rollback on precommit failure.
 ## Project evidence and next milestone
 
 - [Implementation progress and remaining milestones](docs/progress.md)
+- [Interactive operator console and browser security](docs/operator-ui.md)
+- [Operator console screenshots and verification](docs/evidence/operator-ui-2026-09-23/README.md)
 - [Complete live feasibility and failure analysis](docs/evidence/ten-task-live-2026-09-23/README.md)
 - [Offline analysis and viewer contract](docs/evaluation-analysis.md)
 - [Live model results and retained failure analysis](docs/evidence/local-model-2026-09-23/README.md)
@@ -184,7 +193,6 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: build the interactive approval/timeline UI on the authenticated API, and
-extend the remaining four tools. The
+Next: extend the remaining four tools and their policy/grading coverage. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

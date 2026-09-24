@@ -3,8 +3,8 @@
 The FastAPI control plane connects owner-scoped task submission, run status,
 redacted timelines, cancellation, and exact-action review to the durable worker.
 It binds only to `127.0.0.1`. The API server and worker run in separate processes;
-only the server reads the operator credential file. An interactive browser UI is
-the next increment. This API does not expose arbitrary tool execution or unsafe
+only the server reads the operator credential file. The [operator console](operator-ui.md)
+provides a same-origin browser workflow. This API does not expose arbitrary tool execution or unsafe
 benchmark profiles.
 
 ## Run without weights or containers
@@ -113,7 +113,9 @@ below also runs the existing state grader.
 
 ## Endpoint contract
 
-All endpoints require `Authorization: Bearer <token>`. Mutations additionally
+All API endpoints require `Authorization: Bearer <token>`. The compiled browser
+shell and its exact asset allowlist are public but contain no run data or credentials.
+Mutations additionally
 require `X-Agentguard-Request: 1` and `Content-Type: application/json`.
 
 | Endpoint | Access | Result |
@@ -163,7 +165,7 @@ responses omit document bodies, free-text action arguments, final answers, raw m
 envelopes, approval nonces/hashes, and worker lease tokens. Out-of-scope proposal
 targets are redacted. Exact arguments are intentionally visible only in the owning
 operator's approval detail. This is field-level redaction, not a general secret
-detector. A later UI must render every returned string as escaped text.
+detector. The UI renders every returned string as escaped text.
 
 Credentials are loaded at server startup. To revoke/rotate a token, stop the API,
 replace its private token and fingerprint entry, then restart. The worker does not
@@ -203,7 +205,7 @@ human-usability trials**. CI runs it separately from the in-process API security
 
 Schema v4 adds ownership/idempotency records without rewriting old run evidence.
 Older benchmark/library episodes have no API owner and are not exposed through these
-endpoints. The browser UI, richer safe output inspection, hard worker isolation,
+endpoints. Richer safe output inspection, hard worker isolation,
 immediate subprocess cancellation, and held-out release evaluation remain future work.
 
 Implementation references: [FastAPI testing](https://fastapi.tiangolo.com/tutorial/testing/),

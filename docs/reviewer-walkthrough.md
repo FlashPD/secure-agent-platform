@@ -2,8 +2,8 @@
 
 This walkthrough uses the completed development-suite artifacts and the static
 viewer exported by `agentguard eval-analyze`. It requires no model, containers,
-credentials, or running application. The interactive approval/timeline UI remains
-a later milestone; the [authenticated local API](control-plane.md) is available.
+credentials, or running application. For an interactive action review, use the
+[operator console](operator-ui.md), backed by the [authenticated local API](control-plane.md).
 A separate [durable worker demo](durable-execution.md) exercises
 restartable approvals and interruption after effect commit with scripted responses.
 
@@ -104,8 +104,9 @@ Discuss the measured failure cases before proposing a remedy. Separate prompt
 recovery, model capability, fixture/grader limitations, and infrastructure errors.
 The durable worker now has leases, fencing, restartable approvals, and process-death
 tests. The authenticated API adds owner-scoped review and a real HTTP restart smoke.
-The next platform milestone is the interactive approval/timeline UI.
-Four planned tools and a frozen held-out benchmark also remain.
+The operator console adds exact-action review, redacted timelines, and tested
+browser recovery. The next milestone is completing the remaining four tools;
+the frozen held-out benchmark and portfolio release also remain.
 
 For further detail: [threat model](threat-model.md),
 [analysis contract](evaluation-analysis.md), [suite contract](development-suite.md),

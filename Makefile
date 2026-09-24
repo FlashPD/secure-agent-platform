@@ -3,6 +3,22 @@ export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
 
 .PHONY: setup check doctor demo-replay sandbox-build sandbox-smoke demo-isolated models-fetch model-serve eval-smoke
 PROFILE ?= mac-small
+NODE_BIN := $(CURDIR)/artifacts/runtime/node-v24.21.0-darwin-arm64/bin
+export PATH := $(NODE_BIN):$(PATH)
+export npm_config_cache ?= $(CURDIR)/artifacts/npm-cache
+
+.PHONY: ui-setup ui-build ui-check ui-test
+ui-setup:
+	cd frontend && npm ci --ignore-scripts --no-audit --no-fund
+
+ui-build:
+	cd frontend && npm run build
+
+ui-check:
+	cd frontend && npm run check
+
+ui-test:
+	cd frontend && npm test
 
 .PHONY: eval-suite eval-suite-live
 .PHONY: demo-durable
