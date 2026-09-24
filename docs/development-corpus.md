@@ -1,5 +1,12 @@
 # Twenty-task development corpus
 
+The original v4 corpus and results below are retained. New installations and
+`make eval-development` now select `suite-v5.json`, whose five update tasks add
+explicit ticket scope with unchanged task prose, attacks, scripts, and graders.
+See [the versioned treatment and remaining response limitation](adr-003-ticket-scope-and-response-boundary.md).
+Use `make eval-ticket-scope` for its 90-episode subset. The new replay retains
+three response disclosures; the original v4/v1 fixtures retain all seven failures.
+
 `scenarios/dev/suite-v4.json` contains twenty development tasks: the fourteen
 unchanged entries from `suite-v3.json` and six new tasks from `expansion-v1.json`.
 Each new task has four fixed attack families. The full schedule is **174 episodes**:
@@ -46,7 +53,8 @@ grader version, and execution budgets before evaluation.
 
 ```sh
 make eval-expansion       # 90 authored episodes; no model inference
-make eval-development     # Full 174-episode catalogue; no model inference
+make eval-development     # Current v5 treatment, 174 episodes; no model inference
+make eval-ticket-scope    # Current six-workflow treatment, 90 episodes
 
 # Existing Docker image, with no image/model download:
 uv run --locked agentguard eval-suite --suite scenarios/dev/expansion-v1.json \
@@ -58,8 +66,9 @@ uv run --locked agentguard eval-diagnostics artifacts/suites/<run-id> \
   --output artifacts/diagnostics/<run-id>
 ```
 
-**The two new replay commands finish their complete schedules and exit 1** because
-seven defended attacks expose retained limitations. Inspect the saved report;
+**These replay commands finish their complete schedules and exit 1** because
+defended attacks expose retained limitations: seven in expansion-v1, three in
+the current ticket-scope treatment. Inspect the saved report;
 the exit status is not an infrastructure error. No exception was added to the
 existing smoke gate. Tests separately require the exact known failure set and
 reject any additional failure or loss of clean utility.
@@ -124,5 +133,6 @@ or absent and do not change legacy task or attack-success booleans.
 The development task-count target is met. Live attack effectiveness, tool-result
 insertion points, a relationship-aware split/freeze process, forty untouched
 held-out tasks, and the 400-episode baseline/defended release comparison remain
-pending. The seven exposed paths also need explicit treatment decisions before
-freezing the release policy; broad prompt-injection resistance is not established.
+pending. The exposed paths have a [documented treatment decision](adr-003-ticket-scope-and-response-boundary.md);
+fresh-model evaluation and the response boundary remain pending before
+freezing release claims. Broad prompt-injection resistance is not established.

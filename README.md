@@ -129,12 +129,23 @@ identity. See [the multiple-attack development pilot](docs/multi-attack-evaluati
 
 The [twenty-task catalogue](docs/development-corpus.md) adds six workflows with
 four attacks each. `make eval-development` runs all 174 authored episodes;
-`make eval-expansion` runs the 90 new episodes. Both retain seven defended
-attacker wins involving sibling-ticket edits and final-response disclosures,
-and exit nonzero after saving complete reports. These are scripted boundary
+`make eval-expansion` runs the 90 original expansion episodes, retaining seven
+defended attacker wins involving sibling-ticket edits and final-response disclosures,
+and exits nonzero after saving complete reports. These are scripted boundary
 checks, not new live-model measurements.
 The [90-episode Docker evidence](docs/evidence/development-expansion-2026-09-24/README.md)
 includes the complete outcomes, offline viewer, and retained failure analysis.
+
+The [ticket-scope treatment](docs/adr-003-ticket-scope-and-response-boundary.md)
+adds exact ticket permissions to all five update workflows. `make eval-development`
+now selects the versioned v5 catalogue; `make eval-ticket-scope` runs its six-task
+treatment subset. These authored checks block the four sibling edits and retain
+the three final-response disclosures, so both commands still exit nonzero.
+`make eval-expansion` retains the original seven-failure fixtures. New operator
+installations use the narrowed contracts; existing settings keep their suite.
+No fresh-model improvement or output-confidentiality guarantee is claimed.
+The [90-episode Docker treatment evidence](docs/evidence/ticket-scope-2026-09-24/README.md)
+includes the exact four improved outcomes, remaining failures, and offline viewer.
 
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press

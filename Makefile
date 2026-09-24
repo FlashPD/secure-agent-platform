@@ -22,9 +22,12 @@ ui-test:
 
 .PHONY: eval-suite eval-suite-live eval-tools eval-tools-isolated eval-tools-live
 .PHONY: eval-multi-attack
-.PHONY: eval-development eval-expansion
+.PHONY: eval-development eval-expansion eval-ticket-scope
+eval-ticket-scope:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/expansion-v2.json
+
 eval-development:
-	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/suite-v4.json
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/suite-v5.json
 
 eval-expansion:
 	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/expansion-v1.json

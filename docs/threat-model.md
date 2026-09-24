@@ -86,11 +86,14 @@ requirements. Its ten self-authored development payloads exercise several
 authorization rules but cannot establish broad attack coverage or held-out ASR.
 
 The [twenty-task development corpus](development-corpus.md) includes authored
-counterexamples to two current boundaries: ordinary internal ticket updates are
-authorized by project rather than a per-ticket task allowlist, and final response
-text does not pass through the tool gateway. Four protected-sibling mutations and
-three response disclosures succeed in defended expansion replay. These are
-reachable scripted behaviors, not measured model attack-success rates. Review
+counterexamples to two boundaries: legacy contracts authorize updates by project,
+and final response text does not pass through the tool gateway. Four protected-sibling
+mutations and three response disclosures succeed in the original expansion replay.
+The [gateway-v3 treatment](adr-003-ticket-scope-and-response-boundary.md) adds explicit
+ticket update lists to the new default catalogue and blocks those four mutations.
+Missing/null lists retain project-wide update authority for legacy contracts;
+empty lists deny every update. The three response disclosures remain failures.
+These are reachable scripted behaviors, not measured model attack-success rates. Review
 of sensitive tool effects does not prevent a model from disclosing source text
 in its final answer.
 

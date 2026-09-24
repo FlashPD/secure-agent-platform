@@ -227,10 +227,10 @@ def test_new_grader_annotations_reject_invalid_resources_and_encodings(field, va
 def test_new_control_installation_uses_twenty_tasks_without_mutating_old_settings(tmp_path):
     path = initialize_control(Path.cwd(), tmp_path / "control", fixture=True)
     settings = ControlSettings.model_validate_json(path.read_bytes())
-    assert settings.suite.name == "suite-v4.json"
+    assert settings.suite.name == "suite-v5.json"
     control, _ = prepare_control(settings)
     assert len(control.tasks) == 20
     old = settings.model_copy(update={"suite": Path.cwd() / "scenarios/dev/suite-v3.json"})
     old_control, _ = prepare_control(old)
     assert len(old_control.tasks) == 14
-    assert json.loads(path.read_text())["suite"].endswith("suite-v4.json")
+    assert json.loads(path.read_text())["suite"].endswith("suite-v5.json")

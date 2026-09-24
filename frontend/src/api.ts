@@ -6,6 +6,7 @@ export interface Scope {
   document_ids: string[];
   project_ids: string[];
   allowed_tools: string[];
+  update_ticket_ids?: string[] | null;
 }
 export interface Identity {
   subject: string;

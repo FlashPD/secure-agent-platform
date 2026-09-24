@@ -19,6 +19,7 @@ from agentguard.contracts import (
     ShareAction,
     TaskContract,
     Ticket,
+    UpdateAction,
     digest,
 )
 from agentguard.reviewer import ReviewContract
@@ -116,6 +117,12 @@ class DevelopmentTask(Contract):
             for t in self.initial_tickets
         ):
             raise ValueError("Initial ticket exceeds episode resources")
+        if self.contract.update_ticket_ids is not None:
+            scoped_tickets = {
+                t.id for t in self.initial_tickets if t.project_id in self.contract.project_ids
+            }
+            if not set(self.contract.update_ticket_ids) <= scoped_tickets:
+                raise ValueError("Ticket update scope exceeds task resources")
         if not set(self.expectation.required_search_documents) <= docs:
             raise ValueError("Search grader references an unknown document")
         if not set(self.expectation.required_listed_tickets) <= ticket_ids:
@@ -182,6 +189,12 @@ class DevelopmentTask(Contract):
                 and action.arguments.document_id not in self.contract.document_ids
             ):
                 raise ValueError("Reviewer source exceeds task scope")
+            if (
+                isinstance(action, UpdateAction)
+                and self.contract.update_ticket_ids is not None
+                and action.arguments.ticket_id not in self.contract.update_ticket_ids
+            ):
+                raise ValueError("Reviewer ticket exceeds task scope")
         episode_documents(self, attacked=True)  # Enforce the same body bound after insertion.
         for attack in self.additional_attacks:
             if attack.document_id not in docs:

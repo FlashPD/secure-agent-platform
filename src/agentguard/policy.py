@@ -16,7 +16,7 @@ from agentguard.contracts import (
     digest,
 )
 
-POLICY_VERSION = "gateway-v2"
+POLICY_VERSION = "gateway-v3"
 
 
 def evaluate(
@@ -117,6 +117,12 @@ def evaluate(
             permitted = readers if isinstance(action, ListAction) else resource.writers
             if contract.actor not in permitted:
                 return decision("DENY", "ACTOR_FORBIDDEN")
+            if (
+                isinstance(action, UpdateAction)
+                and contract.update_ticket_ids is not None
+                and action.arguments.ticket_id not in contract.update_ticket_ids
+            ):
+                return decision("DENY", "TICKET_OUT_OF_SCOPE")
             if isinstance(action, ShareAction):
                 assert source is not None
                 if source.id not in contract.document_ids:

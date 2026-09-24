@@ -61,10 +61,12 @@ stronger OS process separation must not be presented as implemented.
   effectiveness is unmeasured. Tool-response insertion remains pending. Grader v4
   now supports explicitly declared canonical base64/hex canary matching; arbitrary
   encoding and semantic leakage remain outside that coverage.
-- Treatment decisions for the seven exposed defended paths in expansion replay:
-  four protected-sibling edits inside authorized projects and three final-response
-  disclosures. These are authored counterexamples, not live attack rates. Resolve
-  or explicitly retain these limits before freezing release policy and thresholds.
+- Fresh-model evaluation of the [ticket-scope treatment](adr-003-ticket-scope-and-response-boundary.md).
+  Explicit update lists block the four protected-sibling edits in authored replay;
+  three final-response disclosures remain an explicit limitation. Older contracts
+  with no list retain project-wide authority. Output review or constrained response
+  generation requires a separate treatment and utility measurement. These scripted
+  results do not establish live attack reduction or waive release thresholds.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
   loss no greater than five percentage points, and lower observed attack success

@@ -123,7 +123,7 @@ test('approve the exact action after API restart and commit it once', async ({ p
   await expect(page.getByRole('button', { name: 'Approve exact action' })).toBeDisabled();
   await expect(page.getByText('Office hours are at 15:00 UTC.', { exact: true })).toBeVisible();
   await page.getByText('Original task and authorization binding', { exact: true }).click();
-  await expect(page.getByText('gateway-v2', { exact: true })).toBeVisible();
+  await expect(page.getByText('gateway-v3', { exact: true })).toBeVisible();
   await page.screenshot({ path: join(directory, '../approval-desktop.png'), fullPage: true });
   await stop();
   await expect(page.getByText('Connection interrupted.', { exact: false })).toBeVisible();
@@ -232,6 +232,7 @@ test('document share exposes exact source and commits only after approval', asyn
 test('listed ticket update finishes with the expected version', async ({ page }) => {
   await login(page);
   const id = await submit(page, 'ticket-maintenance');
+  await expect(page.locator('.scope-list').getByText('atlas-1', { exact: true })).toBeVisible();
   expect(JSON.parse(fixture('advance')).status).toBe('COMPLETED');
   await expect(
     page.getByRole('region', { name: 'Selected run' }).getByText('completed', { exact: true }),
@@ -239,6 +240,30 @@ test('listed ticket update finishes with the expected version', async ({ page })
   const tickets = JSON.parse(fixture('tickets', id));
   expect(tickets.find((ticket: { id: string }) => ticket.id === 'atlas-1').version).toBe(2);
   expect(tickets.find((ticket: { id: string }) => ticket.id === 'orion-1').version).toBe(1);
+});
+
+test('ticket review shows the trusted edit scope and preserves its sibling', async ({ page }) => {
+  await login(page);
+  const id = await submit(page, 'reviewed-ticket-correction');
+  await expect(page.locator('.scope-list').getByText('notice-1', { exact: true })).toBeVisible();
+  expect(JSON.parse(fixture('advance')).status).toBe('WAITING_APPROVAL');
+  await page.getByRole('button', { name: 'Inspect action' }).click();
+  await page.getByText('Original task and authorization binding', { exact: true }).click();
+  const scope = page.locator('.scope-details').filter({
+    has: page.getByText('Original task and authorization binding', { exact: true }),
+  });
+  await expect(scope.getByText('Editable tickets', { exact: true })).toBeVisible();
+  await expect(scope.getByText('notice-1', { exact: true })).toBeVisible();
+  const before = JSON.parse(fixture('tickets', id));
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Approve exact action' }).click();
+  await expect(page.getByText('Action approved.', { exact: false })).toBeVisible();
+  expect(JSON.parse(fixture('advance')).status).toBe('COMPLETED');
+  const after = JSON.parse(fixture('tickets', id));
+  expect(after.find((ticket: { id: string }) => ticket.id === 'notice-1').version).toBe(2);
+  expect(after.filter((ticket: { id: string }) => ticket.id !== 'notice-1')).toEqual(
+    before.filter((ticket: { id: string }) => ticket.id !== 'notice-1'),
+  );
 });
 
 test('observer has no review credential and cannot submit or cancel', async ({ page }) => {

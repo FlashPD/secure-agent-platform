@@ -30,6 +30,9 @@ class TaskContract(Contract):
     document_ids: tuple[Identifier, ...]
     project_ids: tuple[Identifier, ...]
     allowed_tools: tuple[Tool, ...] = ("documents.read", "tickets.create")
+    # None preserves explicitly project-wide legacy tasks; () permits no updates.
+    # This narrows write authority only, independently of inventory read access.
+    update_ticket_ids: tuple[Identifier, ...] | None = Field(default=None, max_length=100)
 
 
 class Document(Contract):

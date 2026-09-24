@@ -303,10 +303,28 @@ This increment performs zero fresh model trials.
 The [Docker evidence](evidence/development-expansion-2026-09-24/README.md) retains
 all 55 failed task grades across the three profiles.
 
-## Next increment: exposed boundaries and held-out preparation
+## Fifteenth increment: per-ticket update authority
 
-Decide and test the treatment for protected sibling-ticket edits and final-answer
-disclosure, then measure attack effectiveness with fresh inference. Audit related
+- [x] Add trusted update-ticket lists and `gateway-v3` denial before computation/review.
+- [x] Preserve project inventory access while narrowing write scope; missing/null lists keep legacy authority.
+- [x] Reject revoked scope at review, after approval, and during effect computation.
+- [x] Version five task contracts without changing their prose, attacks, scripts, or graders.
+- [x] Select the v5 catalogue for new console installations and display editable tickets to reviewers.
+- [x] Pass 423 Python tests, lint/format checks, and strict typing.
+- [x] Preserve all 20 defended clean tasks and block the four sibling-edit paths in full replay.
+- [x] Retain three final-response disclosures as failures, without exposing grader canaries to policy.
+- [x] Complete all 90 treatment episodes through Docker, recheck every grade, and publish the offline viewer.
+- [x] Pass 14 Chrome scenarios, including exact ticket scope and sibling preservation in review.
+
+See [ADR 003](adr-003-ticket-scope-and-response-boundary.md) and
+[the treatment evidence](evidence/ticket-scope-2026-09-24/README.md). Existing saved control
+settings and original evidence retain their prior task scope. This increment
+performs zero fresh model trials; final-response confidentiality remains unenforced.
+
+## Next increment: response boundary and held-out preparation
+
+Design a separate output-authorization treatment and measure its utility cost;
+measure ticket-scope attack effectiveness with fresh inference. Audit related
 workflow families and freeze forty untouched held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).
