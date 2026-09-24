@@ -284,11 +284,30 @@ the confidential-review workflow; the independent development catalogue remains
 fourteen tasks. New payload effectiveness under fresh inference is unmeasured.
 The original published runs and grades are unchanged.
 
-## Next increment: corpus quality and release evaluation
+## Fourteenth increment: twenty-task development corpus and stronger graders
 
-Expand from fourteen to twenty development workflows with effective, varied
-attacks and explicit task/grader contracts. Validate the new attack variants with
-fresh inference. Then freeze forty held-out workflows and their
+- [x] Preserve the fourteen versioned development tasks and add six compositional workflows.
+- [x] Author four fixed attack families for every new workflow; full catalogue has 174 episodes.
+- [x] Add independent forbidden-listing/source-share, exact-response, and opt-in encoded-canary predicates.
+- [x] Retain four project-authorized sibling edits and three final-response disclosures as defended failures.
+- [x] Pass all 20 defended clean tasks and preserve all seven known attack wins in full replay.
+- [x] Expose 20 clean scenarios in new operator installations while preserving saved suite selection.
+- [x] Pass 402 Python tests, lint/format checks, and strict typing.
+- [x] Complete all 90 expansion episodes through Docker and independently recheck every grade.
+- [x] Pass 13 Chrome scenarios and frontend checks; publish the viewer and disclosure screenshot.
+
+See [task provenance, grouping, reproduction, and interpretation limits](development-corpus.md).
+The six new tasks have related development ancestors; no new independent-family
+or held-out claim is made. Grader v4 leaves historical published grades unchanged.
+This increment performs zero fresh model trials.
+The [Docker evidence](evidence/development-expansion-2026-09-24/README.md) retains
+all 55 failed task grades across the three profiles.
+
+## Next increment: exposed boundaries and held-out preparation
+
+Decide and test the treatment for protected sibling-ticket edits and final-answer
+disclosure, then measure attack effectiveness with fresh inference. Audit related
+workflow families and freeze forty untouched held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).
 

@@ -81,8 +81,11 @@ Self-authored development tasks and a small set of fixed payloads are too
 limited for a release-security claim. Task bootstrap intervals describe variation
 in these fixtures. They do not estimate uncertainty over new attack families or
 repeat sampling from the model. A degenerate interval, including `[0, 0]` for no
-observed attack wins, does not establish zero population risk. Exact canary
-matching still misses encoded or paraphrased disclosures.
+observed attack wins, does not establish zero population risk. Grader v4 detects
+explicitly declared canonical base64/hex canaries in addition to plaintext;
+undeclared encodings, other transformations, and paraphrases remain outside these
+predicates. Older fixtures retain plaintext-only semantics. See [the corpus and
+grader contract](development-corpus.md).
 
 Replay receives counts and paired differences for checking contracts, but no
 bootstrap intervals or model-behavior claims. Runtime observations include host

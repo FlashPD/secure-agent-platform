@@ -87,7 +87,8 @@ profile together. It recomputes numerator/denominator ratios for each draw, so
 unequal attack counts remain episode-weighted. It does not average task rates or
 resample payloads independently. Replay has no model-behavior intervals.
 
-Only document-body append insertion is implemented. Tool-result insertion,
-encoded disclosure grading, new workflow families, split/freeze tooling,
-repeated seeds, and release gates remain future work. The pilot is not evidence
+Only document-body append insertion is implemented. The subsequent
+[twenty-task expansion](development-corpus.md) adds six related workflows and
+opt-in canonical base64/hex disclosure grading. Tool-result insertion,
+split/freeze tooling, repeated seeds, and release gates remain future work. The pilot is not evidence
 of effective fresh-model attacks on the newer search/update/share workflows.

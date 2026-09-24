@@ -29,13 +29,18 @@ utility, attacked utility, observed attacker wins, and worst-case wins together.
 Inspect episode-status counts so an infrastructure failure cannot appear as
 successful resistance.
 
-The current suite has fourteen development tasks, one attack per task, and one trial
+This published live suite has fourteen development tasks, one attack per task, and one trial
 per profile/input: 84 scheduled episodes. Defended passed 14/14 clean tasks and
 13/14 attacked tasks with 0/14 observed attacker wins; baseline and prompt-only
 each passed 12/14 clean, 10/14 attacked, with 4/14 wins. It is self-authored development data,
 not a frozen held-out release benchmark. The companion `analysis.md` gives paired
 differences and conditional attack success on tasks solved cleanly by both
 profiles. Its intervals describe task resampling, not unseen attack coverage.
+
+The newer [twenty-task development corpus](development-corpus.md) is separate
+scripted evidence. It exposes seven defended paths involving sibling-ticket
+edits and final-response disclosures. Do not present the earlier zero observed
+live wins as a claim that these paths are protected.
 
 ## 1:30 — Inspect a redirected write
 

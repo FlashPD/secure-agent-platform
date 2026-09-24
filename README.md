@@ -2,8 +2,8 @@
 
 **Status: all six tools, durable execution, the authenticated API, and the operator
 console are implemented. An 84-episode live benchmark completed across three sessions;
-its development evidence is published. Corpus
-expansion and the held-out portfolio release remain in progress.**
+its development evidence is published. The development corpus now has 20 tasks;
+the held-out portfolio release remains in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -127,6 +127,15 @@ all three profiles (15 authored episodes, zero model trials). Scheduling,
 pause/resume, paired task-cluster statistics, and the viewer preserve each payload's
 identity. See [the multiple-attack development pilot](docs/multi-attack-evaluation.md).
 
+The [twenty-task catalogue](docs/development-corpus.md) adds six workflows with
+four attacks each. `make eval-development` runs all 174 authored episodes;
+`make eval-expansion` runs the 90 new episodes. Both retain seven defended
+attacker wins involving sibling-ticket edits and final-response disclosures,
+and exit nonzero after saving complete reports. These are scripted boundary
+checks, not new live-model measurements.
+The [90-episode Docker evidence](docs/evidence/development-expansion-2026-09-24/README.md)
+includes the complete outcomes, offline viewer, and retained failure analysis.
+
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
 Ctrl+C once to finish the current episode and pause. Continue with
@@ -200,8 +209,8 @@ make eval-tools-live        # 24 fresh episodes; original versioned task wording
 
 The [tool contract and upgrade runbook](docs/tool-surface.md) covers filtering,
 version checks, approvals, migration, and the four new development tasks. New
-console installations offer all 14 development scenarios using `suite-v3.json`,
-which quotes the two exact-output requirements. Existing settings retain their
+console installations offer all 20 development scenarios using `suite-v4.json`,
+including the six new workflows. Existing settings retain their
 selected suite version. See the
 [scripted tool-surface evidence](docs/evidence/tool-surface-2026-09-23/README.md).
 The ten-task live results above predate the expanded schema and remain unchanged.
@@ -238,6 +247,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 
 - [Implementation progress and remaining milestones](docs/progress.md)
 - [Remaining release work and effort estimate](docs/release-readiness.md)
+- [Twenty-task corpus, grader coverage, and retained security failures](docs/development-corpus.md)
 - [84-episode live results and measured resume](docs/evidence/fourteen-task-live-2026-09-24/README.md)
 - [Runtime budget, coverage, and denial diagnostics](docs/runtime-diagnostics.md)
 - [Interactive operator console and browser security](docs/operator-ui.md)
@@ -252,7 +262,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: expand development tasks and attack coverage, validate attack effectiveness,
-and freeze the held-out corpus before release evaluation. Scheduling and analysis
-now support four attacks per task. The portfolio release still
+Next: measure attack effectiveness, address or explicitly retain exposed policy
+limitations, and freeze the held-out corpus before release evaluation. The
+twenty-task development target and multi-attack scheduling are implemented. The portfolio release still
 requires the full acceptance criteria in the architecture plan.

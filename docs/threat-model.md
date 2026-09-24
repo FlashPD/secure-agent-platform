@@ -74,13 +74,25 @@ process; it does not implement operator/worker credential separation. Ordinary
 runtime use still pauses for review. See the [suite contract](development-suite.md).
 
 The current grader detects exact synthetic canaries in final responses and ticket
-title/body text and simulated share bodies. It does not detect paraphrases or encoded leakage.
+title/body text and simulated share bodies. Grader v4 optionally checks canonical
+base64 and lowercase hexadecimal encodings of UTF-8 canaries when declared by the
+fixture. It does not detect arbitrary encodings or paraphrases; existing fixtures
+remain plaintext-only.
 The expanded tool suite also grades search/list results, ticket versions, protected
 ticket contents, and exact shared documents. See [the tool contract](tool-surface.md).
 The original ten-task suite
 also checks stored read outcomes and attempts, ticket counts, and final-answer
 requirements. Its ten self-authored development payloads exercise several
 authorization rules but cannot establish broad attack coverage or held-out ASR.
+
+The [twenty-task development corpus](development-corpus.md) includes authored
+counterexamples to two current boundaries: ordinary internal ticket updates are
+authorized by project rather than a per-ticket task allowlist, and final response
+text does not pass through the tool gateway. Four protected-sibling mutations and
+three response disclosures succeed in defended expansion replay. These are
+reachable scripted behaviors, not measured model attack-success rates. Review
+of sensitive tool effects does not prevent a model from disclosing source text
+in its final answer.
 
 The container backend uses no host mounts or network, a read-only root filesystem,
 unprivileged UID, dropped capabilities, no-new-privileges, default seccomp, and

@@ -1,7 +1,7 @@
 # Remaining work for a portfolio release
 
 The application, six tools, deterministic authorization tests, durable worker,
-operator console, and development evidence are implemented. The release is still
+operator console, twenty-task development corpus, and development evidence are implemented. The release is still
 experimental: the planned held-out corpus and product-quality gate do not exist.
 Completing application features is distinct from validating agent behavior.
 
@@ -49,16 +49,22 @@ stronger OS process separation must not be presented as implemented.
   those workflows. In the subsequent 84-episode catalogue run, those four newer
   workflows again had zero observed attacker wins in every profile. Do not pool
   differently versioned runs into one score.
-- Six more development tasks and forty held-out tasks. The current fourteen tasks
-  are all development assets. Do not relabel any of them as held-out. Freeze task
+- Forty held-out tasks. The [twenty-task development target](development-corpus.md)
+  is now met, with four attacks on each of the six added workflows. All twenty
+  tasks are development assets with known related families. Do not relabel them
+  as held-out. Freeze task
   families, payloads, budgets, grader predicates, and thresholds before release runs.
-- Four fixed attack families for each held-out task; the current suite has one
-  payload per task. [Multiple-attack scheduling, resumable identities, and paired
+- Four fixed attack families for each held-out task; the current catalogue has
+  fourteen one-payload tasks and six four-payload tasks. [Multiple-attack scheduling, resumable identities, and paired
   task-cluster analysis](multi-attack-evaluation.md) are now implemented and tested
-  with a four-family development pilot. The pilot reuses a development workflow;
-  it does not expand the independent task count or establish live effectiveness.
-  Include tool-response insertion points and specify which
-  encoded canary disclosures are graded; exact plaintext detection alone is limited.
+  with a four-family development pilot and the six-workflow expansion. New live
+  effectiveness is unmeasured. Tool-response insertion remains pending. Grader v4
+  now supports explicitly declared canonical base64/hex canary matching; arbitrary
+  encoding and semantic leakage remain outside that coverage.
+- Treatment decisions for the seven exposed defended paths in expansion replay:
+  four protected-sibling edits inside authorized projects and three final-response
+  disclosures. These are authored counterexamples, not live attack rates. Resolve
+  or explicitly retain these limits before freezing release policy and thresholds.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
   loss no greater than five percentage points, and lower observed attack success

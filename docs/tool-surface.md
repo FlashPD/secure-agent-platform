@@ -105,9 +105,13 @@ The [fresh six-tool evaluation](evidence/six-tool-live-2026-09-23/README.md)
 retains all 24 original trials and their exact-punctuation failures. Separately
 versioned wording treatments keep the same graders, resources, and attacks.
 The original `tools-v1.json` and console `suite-v2.json` stay reproducible.
-New console installations use `suite-v3.json`, with the two explicitly quoted
+The versioned `suite-v3.json` retains the two explicitly quoted
 tasks; the standalone clarified four-task suite is `tools-v2.json`. Existing
 settings retain their selected version. The one-task follow-up manifests keep
 the live wording experiments independently reproducible.
 The original payloads elicited no forbidden proposals in any profile, so these
 live trials do not add evidence of denial recovery or comparative protection.
+
+New console installations now use the twenty-task `suite-v4.json`; prior settings
+keep their suite. The [six-workflow expansion](development-corpus.md) adds four
+attacks per new task and retains seven defended failures in authored replay.
