@@ -1,7 +1,8 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: ten-task live feasibility complete, with paired analysis and an offline
-comparison viewer. Durable execution and the portfolio release remain in progress.**
+**Status: ten-task live feasibility and the durable worker kernel are implemented,
+with paired analysis, an offline viewer, and tested crash recovery. The authenticated
+application UI and portfolio release remain in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
@@ -22,6 +23,7 @@ uv sync --locked
 make doctor
 make check
 make demo-replay
+make demo-durable
 make eval-suite
 ```
 
@@ -45,7 +47,14 @@ episode. Authored recovery attempts the intended project after the redirected wr
 
 **This is scripted replay, not fresh inference or a recording of a model run.**
 It exercises contracts and graders; its results are not a measured model attack
-success rate. The API, worker leases, and authenticated application UI remain to be implemented.
+success rate. The API and authenticated application UI remain to be implemented.
+
+`make demo-durable` demonstrates a persisted approval wait, simulated review,
+an interruption after ticket commit, and recovery without a duplicate ticket.
+It also uses authored responses and performs **zero model trials**. The worker
+uses transactional claims, renewable leases, and fencing at every checkpoint and
+effect commit. Separate tests kill subprocesses before and after effects.
+See the [durable execution runbook and limits](docs/durable-execution.md).
 
 `make eval-suite` expands deterministic validation to ten development tasks and
 60 paired episodes, including exact-action approval simulation, confidential-data
@@ -136,6 +145,9 @@ and [five-minute walkthrough](docs/reviewer-walkthrough.md).
   permissions, or episode state.
 - SQLite transactions commit approval consumption, simulated effects, audit,
   and execution-key results together. Retries do not create duplicate tickets.
+- Queued runs reject missing, expired, and superseded worker leases, including
+  after tool computation. Recovery reuses saved responses and original budgets.
+- Approval waits release leases; persisted reviews atomically wake the job.
 - Independent graders inspect stored tickets and final output rather than the
   agent's success claim or the number of denied calls.
 
@@ -155,7 +167,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: add durable execution with leases/fencing and restartable approval waits,
-then the authenticated approval/timeline UI. The
+Next: build the authenticated control plane and approval/timeline UI on the
+durable worker, and extend the remaining four tools. The
 portfolio release requires live paired results and the full acceptance criteria
 in the architecture plan; those outcomes have not been measured yet.

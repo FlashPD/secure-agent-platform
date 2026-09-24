@@ -5,6 +5,10 @@ export UV_CACHE_DIR ?= $(CURDIR)/artifacts/uv-cache
 PROFILE ?= mac-small
 
 .PHONY: eval-suite eval-suite-live
+.PHONY: demo-durable
+demo-durable:
+	$(UV) run --locked agentguard demo-durable
+
 eval-suite:
 	$(UV) run --locked agentguard eval-suite
 

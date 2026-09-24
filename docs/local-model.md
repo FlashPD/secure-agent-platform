@@ -83,7 +83,9 @@ This is a single-process feasibility runner. It does not provide durable worker
 leases, automatic resume, retries after model failure, or an authenticated approval
 API. A pending sensitive action ends the run in `WAITING_APPROVAL`, without automatic
 approval or a claim that the workflow finished. Calling the runner twice on the same
-episode is rejected; recovery is a later milestone.
+episode is rejected. The separate [durable worker](durable-execution.md) now provides
+lease-fenced recovery and restartable approval waits for queued application episodes;
+the published feasibility benchmark still uses this synchronous runner.
 
 The adapter bounds a model call and closes its connection on timeout. Cancellation
 during generation is observed when that call returns or times out; active container

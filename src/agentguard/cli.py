@@ -8,6 +8,7 @@ import typer
 from agentguard.analysis import write_analysis
 from agentguard.contracts import Profile
 from agentguard.doctor import inventory
+from agentguard.durable_demo import run_durable_demo
 from agentguard.live import prepare_local_model, run_live_smoke
 from agentguard.model import inference_environment
 from agentguard.model_setup import fetch_models, serve_command
@@ -19,6 +20,18 @@ from agentguard.supervisor import DockerComputer
 app = typer.Typer(
     no_args_is_help=True, help="Agent authorization laboratory. Replay is not live inference."
 )
+
+
+@app.command()
+def demo_durable(
+    output: Annotated[Path, typer.Option()] = Path("artifacts/durable"),
+) -> None:
+    """Scripted approval and post-commit recovery demo; zero model trials."""
+    directory = run_durable_demo(Path("scenarios/dev/suite/authorized-shared-write.json"), output)
+    typer.echo((directory / "report.md").read_text())
+    typer.echo(f"Report and database: {directory}")
+    if not json.loads((directory / "report.json").read_text())["passed"]:
+        raise typer.Exit(1)
 
 
 @app.command()

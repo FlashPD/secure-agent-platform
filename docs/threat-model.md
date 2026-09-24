@@ -30,6 +30,15 @@ Effect, approval consumption, idempotency output, and audit share one transactio
 Committed retries return their original result; changing an execution key's
 arguments raises a conflict. Audit is append-only by convention, not tamper-proof.
 
+Managed jobs additionally require a live lease token and claim generation in
+every checkpoint and effect transaction, including the recheck after computation.
+An expired worker cannot save a model response, finalize a run, or commit an effect.
+Missing tokens cannot bypass fencing by calling the synchronous runtime. Cancellation
+revokes the lease atomically. Approval decisions wake waiting jobs in the same
+transaction; recovery revalidates the action's approval against current scope.
+The model never receives lease tokens or reviewer nonces. Direct database access
+remains trusted; this is not OS-level separation of the operator and worker.
+
 `Store.review()` and `Store.approval()` are trusted operator library functions.
 They have no authentication and must never become model tools. Operator/worker
 credential separation and API authentication are future work. A nonce prevents
@@ -77,7 +86,7 @@ styles to the bundled hashes and denies network connections. It exposes no tool
 execution, approval, authentication, or service endpoint. These checks do not
 establish CSRF protection or credential separation for the future application.
 
-Not implemented: durable worker leases/fencing and resume, immediate in-flight
-cancellation, model-failure retries, authenticated application security, or hosted multi-tenancy.
+Not implemented: immediate in-flight cancellation, model-failure retries,
+authenticated application security, or hosted multi-tenancy.
 Do not expose this package as a remote business service. The local inference
 server has no business credentials; its built-in agent tools and browser UI are disabled.

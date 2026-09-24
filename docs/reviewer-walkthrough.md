@@ -2,8 +2,9 @@
 
 This walkthrough uses the completed development-suite artifacts and the static
 viewer exported by `agentguard eval-analyze`. It requires no model, containers,
-credentials, or running application. The authenticated approval/timeline UI and
-durable worker remain later milestones.
+credentials, or running application. The authenticated approval/timeline UI remains
+a later milestone. A separate [durable worker demo](durable-execution.md) exercises
+restartable approvals and interruption after effect commit with scripted responses.
 
 Start with the [complete live evidence](evidence/ten-task-live-2026-09-23/README.md)
 and its [standalone viewer](evidence/ten-task-live-2026-09-23/analysis/explorer.html).
@@ -100,9 +101,9 @@ a machine owner who replaces both the files and their hashes.
 
 Discuss the measured failure cases before proposing a remedy. Separate prompt
 recovery, model capability, fixture/grader limitations, and infrastructure errors.
-The next platform milestone is durable execution with leases and fencing,
-approval waits that survive restart, and fault-injection tests. Four planned
-tools, authenticated application controls, and a frozen held-out benchmark remain.
+The durable worker now has leases, fencing, restartable approvals, and process-death
+tests. The next platform milestone is the authenticated control plane and approval UI.
+Four planned tools and a frozen held-out benchmark also remain.
 
 For further detail: [threat model](threat-model.md),
 [analysis contract](evaluation-analysis.md), [suite contract](development-suite.md),

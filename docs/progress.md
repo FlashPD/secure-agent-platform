@@ -54,7 +54,7 @@ The development task is now version 2: its requested title and body requirement
 are explicit in the user-visible task. The grader is unchanged. Version 1 trials
 remain recorded, including failures caused by omitted body detail or title casing.
 
-This loop persists evidence but does not implement durable leases, automatic
+At this milestone the loop persisted evidence but did not implement durable leases, automatic
 resume, an authenticated approval API, or model-failure retries. See the
 [native-model runbook](local-model.md).
 
@@ -114,25 +114,46 @@ fails recovery after two blocked attacks. The release model choice remains open
 pending broader evidence. Only two of six planned tools exist; no held-out suite
 has been authored or frozen, and no portfolio release gate has passed.
 
-## Next increment: durable execution
+## Sixth increment: durable worker kernel
 
-1. Implement transactional job claims, leases, heartbeats, and fencing tokens.
-2. Require the live lease on model checkpoints and effect commits; test stale workers.
-3. Resume persisted model responses with stable execution keys after interruption,
-   preserving budgets and preventing duplicate effects.
-4. Release leases on approval waits and resume safely after a persisted decision.
-5. Add fault-injection tests before exposing the authenticated control plane.
+- [x] Add schema-v3 jobs with idempotent submissions, transactional claims,
+  renewable leases, random tokens, and monotonically increasing claim generations.
+- [x] Permit one active lease across workers; fence model checkpoints, terminal
+  status, tool preparation, and effect commits in their own write transactions.
+- [x] Recover saved responses with stable execution keys, identical model inputs,
+  and preserved token/step/repair budgets and original episode deadlines.
+- [x] Fail explicitly when a process dies before its model response is saved;
+  reserve its full token allowance and never silently generate a replacement.
+- [x] Release leases for approval waits; atomically wake jobs on review, handle
+  review/checkpoint races, and reject expired or changed approval scope.
+- [x] Pin recovery to model identity, source hashes, task, budgets, and tool backend.
+- [x] Test real subprocess deaths before and after effect commit, stale workers,
+  concurrent claims, cancellation, heartbeat renewal, and database migration.
+- [x] Add `make demo-durable` with state grading, simulated review/interruption,
+  and a reopened database; run it in CI. It performs zero model trials.
+- [x] Pass 207 tests, lint, formatting, and strict types; rerun all 60 scripted
+  development episodes and all seven durable-demo checks successfully.
+
+See the [durable execution contract and runbook](durable-execution.md). These are
+library-level worker guarantees, not authentication or production process isolation.
+The existing synchronous benchmark remains a separate execution mode; its published
+live evidence is unchanged. No fresh model evaluation is claimed for this increment.
+
+## Next increment: authenticated control plane
+
+1. Expose defended task submission, status, cancellation, and safe timeline inspection.
+2. Establish operator/worker credential separation and authenticated review endpoints.
+3. Add CSRF protection, escaped trace rendering, and the interactive approval UI.
 
 Extend coverage to the remaining four planned tools during platform work. The
 static report viewer does not replace the authenticated application/approval UI.
 
 ## Later milestones
 
-The remaining work follows the architecture plan: durable queue/leases/fencing;
-all six tools; authenticated API and operator/worker credential separation;
+The remaining work follows the architecture plan: all six tools;
+authenticated API and operator/worker credential separation;
 approval UI and execution timeline; paired held-out evaluation and uncertainty;
 recovery/isolation checks; frozen held-out benchmark; portfolio recording and release.
 
-Do not treat the current effect transaction as proof of worker fencing, the trusted
-`review()` library call as an authenticated approval endpoint, or authored replay
+Do not treat the trusted `review()` library call as an authenticated approval endpoint, or authored replay
 recovery as evidence that a model can recover after a denied call.

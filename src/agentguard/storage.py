@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from agentguard.computation import (
     Computer,
@@ -106,7 +106,21 @@ CREATE TABLE IF NOT EXISTS model_calls (
     error TEXT,
     PRIMARY KEY (episode_id, step)
 );
-PRAGMA user_version = 2;
+CREATE TABLE IF NOT EXISTS jobs (
+    episode_id TEXT PRIMARY KEY REFERENCES episodes(id),
+    status TEXT NOT NULL CHECK(status IN
+        ('QUEUED','RUNNING','WAITING_APPROVAL','COMPLETED','FAILED','CANCELLED','BUDGET_EXHAUSTED')),
+    task TEXT NOT NULL,
+    budgets TEXT NOT NULL,
+    manifest TEXT NOT NULL,
+    token TEXT,
+    generation INTEGER NOT NULL DEFAULT 0,
+    lease_until REAL,
+    started_at REAL,
+    deadline REAL,
+    waiting_approval_id TEXT REFERENCES approvals(id)
+);
+PRAGMA user_version = 3;
 """
 
 
@@ -116,6 +130,17 @@ class ExecutionConflict(ValueError):
 
 class ReviewRejected(ValueError):
     """An operator decision no longer matches the pending request."""
+
+
+class LeaseLost(RuntimeError):
+    """A missing, expired, or superseded worker cannot checkpoint or execute."""
+
+
+@dataclass(frozen=True)
+class Lease:
+    episode_id: str
+    token: str
+    generation: int
 
 
 @dataclass(frozen=True)
@@ -144,7 +169,7 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2):
+            if version not in (0, 1, 2, 3):
                 raise ValueError(f"Unsupported database schema: {version}")
             db.execute("PRAGMA journal_mode=WAL")
             db.executescript(SCHEMA)
@@ -213,6 +238,7 @@ class Store:
         approval_id: str | None = None,
         deadline: float | None = None,
         deadline_clock: Callable[[], float] = time.monotonic,
+        lease: Lease | None = None,
     ) -> Execution:
         """Authorize, compute outside the DB lock, then recheck before applying effects.
 
@@ -226,6 +252,7 @@ class Store:
             approval_id=approval_id,
             deadline=deadline,
             deadline_clock=deadline_clock,
+            lease=lease,
         )
         if isinstance(prepared, Execution):
             return prepared
@@ -239,6 +266,7 @@ class Store:
             computed=Computed(prepared=prepared, result=result),
             deadline=deadline,
             deadline_clock=deadline_clock,
+            lease=lease,
         )
         assert isinstance(output, Execution)
         return output
@@ -253,12 +281,14 @@ class Store:
         computed: Computed | None = None,
         deadline: float | None = None,
         deadline_clock: Callable[[], float] = time.monotonic,
+        lease: Lease | None = None,
     ) -> Execution | Prepared:
         if not key or len(key) > 160:
             raise ValueError("Invalid execution key")
         proposal_hash = digest(action.model_dump(mode="json"))
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
+            job = self.require_lease(db, episode_id, lease)
             episode = db.execute("SELECT * FROM episodes WHERE id=?", (episode_id,)).fetchone()
             if episode is None:
                 raise KeyError("Unknown episode")
@@ -302,6 +332,7 @@ class Store:
                 episode["cancelled"]
                 or (previous is None and count >= episode["max_actions"])
                 or (deadline is not None and deadline_clock() >= deadline)
+                or (job is not None and self.clock() >= job["deadline"])
             ):
                 reason = "CANCELLED" if episode["cancelled"] else "BUDGET_EXHAUSTED"
                 return Execution(
@@ -455,6 +486,9 @@ class Store:
                 or row["expires_at"] <= self.clock()
                 or row["action_hash"] != expected_hash
                 or not secrets.compare_digest(row["nonce"], nonce)
+                or db.execute(
+                    "SELECT cancelled FROM episodes WHERE id=?", (row["episode_id"],)
+                ).fetchone()[0]
             ):
                 raise ReviewRejected("Approval is stale, already reviewed, or does not match")
             status = "APPROVED" if approve else "REJECTED"
@@ -469,6 +503,30 @@ class Store:
                 "REVIEWED",
                 {"status": status, "reviewer": reviewer},
             )
+            db.execute(
+                "UPDATE jobs SET status='QUEUED' WHERE episode_id=? "
+                "AND status='WAITING_APPROVAL' AND waiting_approval_id=?",
+                (row["episode_id"], approval_id),
+            )
+
+    def require_lease(
+        self, db: sqlite3.Connection, episode_id: str, lease: Lease | None
+    ) -> sqlite3.Row | None:
+        """Call inside the SAME write transaction as every managed-run mutation."""
+        job = db.execute("SELECT * FROM jobs WHERE episode_id=?", (episode_id,)).fetchone()
+        if job is None and lease is None:
+            return None  # Legacy, explicitly synchronous evaluation episodes.
+        if (
+            job is None
+            or lease is None
+            or lease.episode_id != episode_id
+            or job["status"] != "RUNNING"
+            or job["token"] != lease.token
+            or job["generation"] != lease.generation
+            or job["lease_until"] <= self.clock()
+        ):
+            raise LeaseLost("Worker lease is missing, expired, or superseded")
+        return cast(sqlite3.Row, job)
 
     def is_cancelled(self, episode_id: str) -> bool:
         with self.connection() as db:
@@ -483,6 +541,17 @@ class Store:
             cursor = db.execute("UPDATE episodes SET cancelled=1 WHERE id=?", (episode_id,))
             if cursor.rowcount != 1:
                 raise KeyError("Unknown episode")
+            job = db.execute("SELECT status FROM jobs WHERE episode_id=?", (episode_id,)).fetchone()
+            if job is not None and job["status"] in ("QUEUED", "RUNNING", "WAITING_APPROVAL"):
+                db.execute(
+                    "UPDATE jobs SET status='CANCELLED',token=NULL,lease_until=NULL "
+                    "WHERE episode_id=?",
+                    (episode_id,),
+                )
+                db.execute(
+                    "UPDATE agent_runs SET status='CANCELLED',result=? WHERE episode_id=?",
+                    (canonical_json({"status": "CANCELLED", "reason": "CANCELLED"}), episode_id),
+                )
             self._audit(db, episode_id, None, "CANCELLED", {})
 
     def tickets(self, episode_id: str) -> list[dict[str, Any]]:
