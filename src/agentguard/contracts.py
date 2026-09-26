@@ -118,6 +118,8 @@ class TicketUpdateReceipt(Contract):
     # Explicit permission to disclose ONE completion bit, never source or model text.
     template: Literal["ticket_update_v1"] = "ticket_update_v1"
     action: UpdateAction
+    # Presentation only; the full action remains mandatory trusted authority.
+    model_disclosure: Literal["full_action", "template_only"] = "full_action"
 
 
 class ResponseScope(Contract):

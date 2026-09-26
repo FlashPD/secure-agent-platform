@@ -80,8 +80,13 @@ stronger OS process separation must not be presented as implemented.
   The subsequent [ten-episode live pilot](evidence/receipt-live-pilot-2026-09-25/README.md)
   failed whole-task utility in both arms: control withheld harmless answers, while
   the receipt arm skipped required read/list steps. All four treatment attacks
-  were absent from saved model requests. Narrower model-visible receipt scope
-  and broader live feasibility remain development work; no release objective passed.
+  were absent from saved model requests. The subsequent
+  [receipt-disclosure pilot](evidence/receipt-disclosure-2026-09-25/README.md)
+  narrows model-visible scope while retaining full trusted verification. Its ten
+  new matched episodes recover 1/1 clean and 4/4 attacked treatment success with
+  unchanged graders, four exposed payloads, and one denied attack followed by
+  recovery. Full-action control still fails all five tasks. This one-task result
+  remains opt-in; broader feasibility and release objectives are still pending.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
   loss no greater than five percentage points, and lower observed attack success

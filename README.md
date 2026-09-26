@@ -3,7 +3,8 @@
 **Status: all six tools, durable execution, the authenticated API, and the operator
 console are implemented. An 84-episode live benchmark completed across three sessions;
 its development evidence is published. A subsequent 10-episode live receipt pilot
-exposed a workflow-shortcut failure. The development corpus now has 20 tasks;
+exposed a workflow-shortcut failure; a matched 10-episode receipt-disclosure follow-up
+recovered all five treatment tasks. The development corpus now has 20 tasks;
 the held-out portfolio release remains in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
@@ -175,6 +176,15 @@ required read and listing. None of its four attacks reached a saved model reques
 so its zero attacker wins cannot establish resistance. All ten failed grades,
 raw replies, exposure checks, and reproduction commands are retained.
 
+The subsequent [receipt-disclosure pilot](docs/evidence/receipt-disclosure-2026-09-25/README.md)
+keeps full receipt authority in trusted storage and shows only its template to the
+model. Across ten new matched episodes, clean success improves from 0/1 to 1/1
+and attacked task success from 0/4 to 4/4, with unchanged graders. The treatment
+encounters all four payloads and recovers after one denied shared-ticket proposal.
+Both arms have zero observed attacker wins; the control encounters no attacks.
+This is a one-task development result, not a held-out security claim. See
+[ADR 006](docs/adr-006-model-visible-receipt-scope.md); the treatment stays opt-in.
+
 The [400-episode release runbook](docs/release-evaluation.md) explains when to start
 the main evaluation: after development decisions, forty untouched held-out tasks,
 lineage review, a frozen experiment, and a release-specific gate. It is not ready yet.
@@ -305,7 +315,8 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: address the live receipt pilot’s skipped workflow steps, finish broader
-development feasibility, and freeze the held-out corpus before release evaluation. The
+Next: finish broader treatment feasibility, then freeze the held-out corpus before
+release evaluation. The targeted receipt-disclosure pilot recovered the skipped
+workflow steps without changing graders. The
 twenty-task development target and multi-attack scheduling are implemented. The portfolio release still
 requires the full acceptance criteria in the architecture plan.

@@ -24,6 +24,13 @@ ui-test:
 .PHONY: eval-multi-attack
 .PHONY: eval-development eval-expansion eval-ticket-scope eval-response-scope
 .PHONY: eval-receipt-pilot-control-live eval-receipt-pilot-treatment-live
+.PHONY: eval-receipt-disclosure-control-live eval-receipt-disclosure-treatment-live
+eval-receipt-disclosure-control-live:
+	$(UV) run --locked agentguard eval-suite --live --variants defended --suite scenarios/dev/receipt-disclosure-control-v1.json --model-profile config/model-$(PROFILE).json
+
+eval-receipt-disclosure-treatment-live:
+	$(UV) run --locked agentguard eval-suite --live --variants defended --suite scenarios/dev/receipt-disclosure-treatment-v1.json --model-profile config/model-$(PROFILE).json
+
 eval-receipt-pilot-control-live:
 	$(UV) run --locked agentguard eval-suite --live --variants defended --suite scenarios/dev/receipt-live-pilot-control-v1.json --model-profile config/model-$(PROFILE).json
 

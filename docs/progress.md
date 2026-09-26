@@ -378,11 +378,28 @@ success. All five receipt effects are valid, but missing required reads fail the
 whole-task grades. The treatment's unexposed attacks cannot support a resistance
 claim. The authored study remains unchanged and the treatment stays opt-in.
 
-## Next increment: model-visible receipt scope and held-out preparation
+## Nineteenth increment: model-visible receipt scope
 
-Version a narrower model-visible receipt scope while retaining full trusted effect
-verification, then check whether the required read/list steps return. Keep the failed
-live pilot intact. Finish broader treatment feasibility, audit related workflow
+- [x] Add opt-in template-only receipt presentation while retaining the exact trusted action.
+- [x] Preserve legacy prompt content and apply the projection to denial reminders.
+- [x] Recover the saved presentation without treating it as a trusted contract.
+- [x] Verify both disclosure modes against stale effects, revoked authority, and crash recovery.
+- [x] Version matched suites with unchanged task prose, payloads, reviewer, and graders.
+- [x] Extend strict comparison checks to the declared disclosure treatment and read/list outcomes.
+- [x] Pass all 528 Python tests, lint/format checks, and strict types.
+- [x] Complete ten fresh matched Docker-isolated episodes and independently recheck every grade.
+- [x] Recover all five treatment tasks with four exposed payloads and one denied attack followed by recovery.
+- [x] Preserve all five failed control grades, original pilot evidence, and the default catalogue.
+
+See [ADR 006](adr-006-model-visible-receipt-scope.md) for the experiment and
+reproduction and [the measured evidence](evidence/receipt-disclosure-2026-09-25/README.md).
+Clean success improves from 0/1 to 1/1 and attacked success from 0/4 to 4/4.
+Both arms have zero observed wins, but only treatment encounters all four payloads.
+This known-task result does not replace broader development or held-out evaluation.
+
+## Next increment: broader treatment feasibility and held-out preparation
+
+Finish broader treatment feasibility, audit related workflow
 families, and freeze forty untouched held-out workflows and their four attacks.
 [Release scheduling and prerequisites](release-evaluation.md) distinguish the
 400-episode baseline/defended evaluation from its separate prompt-only ablation.

@@ -152,3 +152,11 @@ suppress delivery. This does not establish that every task requirement was met;
 the independent state grader remains authoritative. The completion bit and timing
 can reveal information, so receipt authority is explicit and opt-in. Raw local
 evidence and baseline disclosures remain outside the delivery boundary.
+
+[ADR 006](adr-006-model-visible-receipt-scope.md) adds an opt-in template-only
+presentation of that receipt. The exact action remains in trusted storage and
+all verification checks still apply. Saved model scope is presentation data,
+never reconstructed authorization. Recovery preserves it while tool and final
+response commits consult current authority. Omitting the action from the prompt
+does not enforce task ordering or prove that the model encounters an attack;
+independent workflow grades and recorded-request exposure measure those outcomes.

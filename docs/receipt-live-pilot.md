@@ -74,3 +74,9 @@ cannot prove whole-task success.
 The next release steps are in [when to run the 400-episode evaluation](release-evaluation.md).
 A successful targeted pilot does not replace broader development coverage,
 held-out authoring, split review, freeze enforcement, or the release-specific gate.
+
+The next [receipt-disclosure experiment](adr-006-model-visible-receipt-scope.md)
+compares the same receipt authority with full-action versus template-only model
+input. Its separate suites and `--experiment receipt_disclosure` comparator mode
+preserve this pilot's inputs and failures. The original comparator defaults to
+`receipt_authority`; do not compare the two studies as interchangeable arms.

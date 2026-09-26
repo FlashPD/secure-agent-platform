@@ -20,6 +20,14 @@ TASK = load_suite(TREATMENT)[1][-1][2]
 TEXT = "Ticket update confirmed."
 
 
+@pytest.fixture(autouse=True, params=["full_action", "template_only"])
+def receipt_disclosure(request, monkeypatch):
+    """Both presentations must retain identical verification and recovery semantics."""
+    raw = TASK.model_dump(mode="json")
+    raw["contract"]["response_scope"]["effect_receipt"]["model_disclosure"] = request.param
+    monkeypatch.setattr(__import__(__name__), "TASK", type(TASK).model_validate(raw))
+
+
 def episode_for(store, *, profile="defended"):
     return store.create_episode(
         TASK.contract,

@@ -98,7 +98,22 @@ Never disclose confidential content to a shared destination.
 FEEDBACK_VERSION = "task-reminder-v2"
 
 
-def tool_feedback(output: Execution, task: str, contract: TaskContract) -> str:
+def model_scope(contract: TaskContract) -> dict[str, Any]:
+    """Project trusted authority into model input without disclosing receipt actions.
+
+    Legacy full-action prompts retain their original bytes. The presentation
+    selector is host configuration, not a model instruction or permission grant.
+    """
+    scope = contract.model_dump(mode="json")
+    response = scope.get("response_scope")
+    if response and response.get("effect_receipt"):
+        receipt = response["effect_receipt"]
+        if receipt.pop("model_disclosure") == "template_only":
+            del receipt["action"]
+    return scope
+
+
+def tool_feedback(output: Execution, task: str, scope: dict[str, Any]) -> str:
     """Repeat only already-visible authority; never propose or authorize a substitute action."""
     feedback: dict[str, Any] = {
         "outcome": output.decision.outcome,
@@ -118,12 +133,16 @@ def tool_feedback(output: Execution, task: str, contract: TaskContract) -> str:
                 "every new action is checked independently."
             ),
             "original_task": task,
-            "scope": contract.model_dump(mode="json"),
+            "scope": scope,
         }
     return canonical_json(feedback)
 
 
 def initial_messages(task: str, contract: TaskContract, *, hardened: bool) -> list[dict[str, str]]:
+    return _initial_messages(task, model_scope(contract), hardened=hardened)
+
+
+def _initial_messages(task: str, scope: dict[str, Any], *, hardened: bool) -> list[dict[str, str]]:
     # No fixtures, scripted actions, predicates, attack objectives, or canaries here.
     return [
         {
@@ -134,7 +153,7 @@ def initial_messages(task: str, contract: TaskContract, *, hardened: bool) -> li
         },
         {
             "role": "user",
-            "content": canonical_json({"task": task, "scope": contract.model_dump(mode="json")}),
+            "content": canonical_json({"task": task, "scope": scope}),
         },
     ]
 
@@ -170,7 +189,8 @@ class Runtime:
             if row is None:
                 raise KeyError("Unknown episode")
             contract = TaskContract.model_validate_json(row["contract"])
-            messages = initial_messages(task, contract, hardened=row["profile"] != "baseline")
+            scope = model_scope(contract)
+            messages = _initial_messages(task, scope, hardened=row["profile"] != "baseline")
             if lease is not None:
                 job = db.execute("SELECT * FROM jobs WHERE episode_id=?", (episode,)).fetchone()
                 if task != job["task"] or self.budgets.model_dump_json() != job["budgets"]:
@@ -185,8 +205,10 @@ class Runtime:
                 # Keep the original model-visible scope for exact transcript reconstruction.
                 # The gateway independently loads CURRENT permissions for each effect.
                 original = json.loads(previous["initial_messages"])
-                contract = TaskContract.model_validate(json.loads(original[1]["content"])["scope"])
-                messages = initial_messages(task, contract, hardened=row["profile"] != "baseline")
+                # A projected scope is deliberately not a complete TaskContract.
+                # Never reconstruct trusted authority from this saved model input.
+                scope = json.loads(original[1]["content"])["scope"]
+                messages = _initial_messages(task, scope, hardened=row["profile"] != "baseline")
                 if previous["initial_messages"] != canonical_json(messages):
                     raise ValueError("Recovery requires the original prompt and contract")
                 db.execute(
@@ -442,7 +464,7 @@ class Runtime:
                 if output.decision.outcome == "REQUIRE_APPROVAL":
                     return finish("WAITING_APPROVAL", "SENSITIVE_WRITE")
                 # Do not disclose operator-only approval details or grant identifiers to the model.
-                result = tool_feedback(output, task, contract)
+                result = tool_feedback(output, task, scope)
                 if len(result.encode()) > self.budgets.max_tool_result_bytes:
                     return finish("BUDGET_EXHAUSTED", "TOOL_RESULT_LIMIT")
                 messages.append({"role": "user", "content": result})
