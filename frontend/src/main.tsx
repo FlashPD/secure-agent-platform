@@ -376,6 +376,8 @@ function Console({
                       <Field label="Response destination">
                         {scenario.scope.response_scope.recipient} ·{' '}
                         {scenario.scope.response_scope.max_classification} clearance
+                        {scenario.scope.response_scope.effect_receipt &&
+                          ' · Confirmed update receipt only'}
                       </Field>
                     )}
                     {scenario.scope.allowed_tools.includes('tickets.update') && (
@@ -856,6 +858,8 @@ function RunPanel({
                     <Field label="Response destination">
                       {detail.snapshot.contract.response_scope.recipient} ·{' '}
                       {detail.snapshot.contract.response_scope.max_classification} clearance
+                      {detail.snapshot.contract.response_scope.effect_receipt &&
+                        ' · Confirmed update receipt only'}
                     </Field>
                   )}
                   <Field label="Execution key">

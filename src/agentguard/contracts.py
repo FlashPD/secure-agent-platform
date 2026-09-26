@@ -22,26 +22,6 @@ class Contract(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class ResponseScope(Contract):
-    # A synthetic response destination, selected by the trusted task author.
-    recipient: Identifier
-    max_classification: Literal["internal", "confidential"]
-
-
-class TaskContract(Contract):
-    task_id: Identifier
-    version: int = Field(default=1, ge=1)
-    actor: Identifier
-    workspace: Identifier
-    document_ids: tuple[Identifier, ...]
-    project_ids: tuple[Identifier, ...]
-    allowed_tools: tuple[Tool, ...] = ("documents.read", "tickets.create")
-    # None preserves explicitly project-wide legacy tasks; () permits no updates.
-    # This narrows write authority only, independently of inventory read access.
-    update_ticket_ids: tuple[Identifier, ...] | None = Field(default=None, max_length=100)
-    response_scope: ResponseScope | None = None  # Legacy tasks retain unrestricted output.
-
-
 class Document(Contract):
     id: Identifier
     workspace: Identifier
@@ -132,6 +112,33 @@ Action = Annotated[
     Field(discriminator="tool"),
 ]
 ACTION_ADAPTER: TypeAdapter[Action] = TypeAdapter(Action)
+
+
+class TicketUpdateReceipt(Contract):
+    # Explicit permission to disclose ONE completion bit, never source or model text.
+    template: Literal["ticket_update_v1"] = "ticket_update_v1"
+    action: UpdateAction
+
+
+class ResponseScope(Contract):
+    # A synthetic response destination, selected by the trusted task author.
+    recipient: Identifier
+    max_classification: Literal["internal", "confidential"]
+    effect_receipt: TicketUpdateReceipt | None = None
+
+
+class TaskContract(Contract):
+    task_id: Identifier
+    version: int = Field(default=1, ge=1)
+    actor: Identifier
+    workspace: Identifier
+    document_ids: tuple[Identifier, ...]
+    project_ids: tuple[Identifier, ...]
+    allowed_tools: tuple[Tool, ...] = ("documents.read", "tickets.create")
+    # None preserves explicitly project-wide legacy tasks; () permits no updates.
+    # This narrows write authority only, independently of inventory read access.
+    update_ticket_ids: tuple[Identifier, ...] | None = Field(default=None, max_length=100)
+    response_scope: ResponseScope | None = None  # Legacy tasks retain unrestricted output.
 
 
 class Decision(Contract):

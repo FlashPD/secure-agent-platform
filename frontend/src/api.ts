@@ -7,7 +7,14 @@ export interface Scope {
   project_ids: string[];
   allowed_tools: string[];
   update_ticket_ids?: string[] | null;
-  response_scope?: { recipient: string; max_classification: 'internal' | 'confidential' } | null;
+  response_scope?: {
+    recipient: string;
+    max_classification: 'internal' | 'confidential';
+    effect_receipt?: {
+      template: 'ticket_update_v1';
+      action: { tool: 'tickets.update'; arguments: Record<string, unknown> };
+    } | null;
+  } | null;
 }
 export interface Identity {
   subject: string;

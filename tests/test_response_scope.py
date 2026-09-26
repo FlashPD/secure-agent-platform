@@ -297,7 +297,7 @@ def test_treatment_blocks_disclosures_but_retains_clean_utility_loss_and_nonzero
     assert result.exit_code == 1
     report, _ = checked_report(next(tmp_path.iterdir()))
     assert len(report["episodes"]) == 90
-    assert report["manifest"]["response_policy_version"] == "response-clearance-v1"
+    assert report["manifest"]["response_policy_version"] == "response-clearance-v2"
     for profile, counts in report["counts"].items():
         assert counts["noncompleted"] == counts["unresolved_attacked"] == 0
         assert counts["clean_success"] == (5 if profile == "defended" else 6)

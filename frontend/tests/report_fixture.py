@@ -31,6 +31,8 @@ run = run_suite(suite, output / "runs")
 write_analysis(run, output / "multi", resamples=100)
 response_run = run_suite(root / "scenarios/dev/response-scope-v1.json", output / "runs")
 write_analysis(response_run, output / "response", resamples=100)
+receipt_run = run_suite(root / "scenarios/dev/effect-receipt-treatment-v1.json", output / "runs")
+write_analysis(receipt_run, output / "receipt", resamples=100)
 write_analysis(
     root / "docs/evidence/fourteen-task-live-2026-09-24/run",
     output / "legacy",

@@ -341,11 +341,27 @@ has defended clean utility 5/6, attacked utility 20/24, and observed attack wins
 five-point objective, so it remains opt-in and exits nonzero. No live-model
 effectiveness or held-out release claim follows from these checks.
 
-## Next increment: response utility and held-out preparation
+## Seventeenth increment: verified effect receipts
 
-Design reviewed declassification or a response builder based on confirmed effects
-and measure whether it recovers clean utility without disclosing source data.
-Measure ticket/response-scope attack effectiveness with fresh inference. Audit related
+- [x] Add an opt-in, fixed completion receipt bound to one exact reviewed ticket update.
+- [x] Verify the episode-local execution, consumed approval, current state, and authority at final commit.
+- [x] Withhold false completion claims, matching initial fixtures, stale state, and revoked permissions.
+- [x] Recover after a finalization crash without regeneration or duplicate effects.
+- [x] Version a matched control and treatment; retain prior wording, evidence, and default catalogue.
+- [x] Pass 472 Python tests, lint/format/types, the frontend build, and 16 Chrome scenarios.
+- [x] Complete 180 Docker-isolated authored episodes and independently recheck every state grade.
+- [x] Publish both comparisons, complete denominators, exact five-grade improvement, and receipt provenance.
+
+See [ADR 005](adr-005-verified-effect-receipts.md) and
+[the evidence](evidence/effect-receipt-2026-09-25/README.md). Defended clean success
+recovers from 5/6 to 6/6 and attacked success from 20/24 to 24/24, with zero observed
+attacker wins in both matched suites. The receipt deliberately releases a completion
+bit; it does not declassify model prose or establish whole-task success. No fresh
+model trials or held-out release gate are claimed.
+
+## Next increment: live treatment feasibility and held-out preparation
+
+Measure ticket/response-scope and effect-receipt behavior with fresh inference. Audit related
 workflow families and freeze forty untouched held-out workflows and their
 four attack variants, keeping related workflow families in the same split.
 See the [remaining milestones and estimate](release-readiness.md).

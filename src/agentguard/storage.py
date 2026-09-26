@@ -47,6 +47,7 @@ from agentguard.contracts import (
     digest,
 )
 from agentguard.response_policy import ResponseDecision, evaluate_response
+from agentguard.response_receipts import verified_receipt_hash
 from agentguard.tool_state import resolve
 
 SCHEMA = """
@@ -363,12 +364,19 @@ class Store:
         row = db.execute("SELECT * FROM episodes WHERE id=?", (episode_id,)).fetchone()
         if row is None:
             raise KeyError("Unknown episode")
+        contract = TaskContract.model_validate_json(row["contract"])
+        receipt_hash = (
+            verified_receipt_hash(db, episode_id, contract, confidential=bool(row["confidential"]))
+            if row["profile"] == "defended" and not row["cancelled"]
+            else None
+        )
         decision = evaluate_response(
             episode_id=episode_id,
-            contract=TaskContract.model_validate_json(row["contract"]),
+            contract=contract,
             profile=row["profile"],
             confidential=bool(row["confidential"]),
             cancelled=bool(row["cancelled"]),
+            receipt_evidence_hash=receipt_hash,
         )
         self._audit(db, episode_id, None, "RESPONSE_DECISION", decision.model_dump(mode="json"))
         return decision

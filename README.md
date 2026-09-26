@@ -157,6 +157,16 @@ artifacts remain privileged and are not sanitized by the response policy.
 The [90-episode response treatment evidence](docs/evidence/response-scope-2026-09-24/README.md)
 preserves all five changed outcomes and the failed clean-task grade.
 
+The opt-in [verified-effect receipt treatment](docs/adr-005-verified-effect-receipts.md)
+recovers this completion-message utility with an explicit, fixed receipt for an
+exact reviewed ticket update. It verifies the committed effect and current authority
+before delivering any confirmation. In a matched 180-episode Docker replay,
+defended clean success rises from 5/6 to 6/6 and attacked success from 20/24 to
+24/24, while both controls retain zero observed attacker wins. These are authored
+boundary checks, not fresh model trials or a held-out release result. Run
+`make eval-effect-receipt`; [the full evidence](docs/evidence/effect-receipt-2026-09-25/README.md)
+preserves the matched control and all baseline failures. The default remains v5.
+
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
 Ctrl+C once to finish the current episode and pause. Continue with

@@ -12,6 +12,7 @@ from pydantic import Field, TypeAdapter, ValidationError
 from agentguard.computation import ToolFailure
 from agentguard.contracts import Action, Contract, Execution, TaskContract, canonical_json
 from agentguard.model import ModelFailure, parse_reply
+from agentguard.response_policy import deliver_response
 from agentguard.reviewer import ExactActionReviewer
 from agentguard.storage import Lease, ReviewRejected, Store
 
@@ -246,6 +247,7 @@ class Runtime:
                     # that commits the visible result. Raw model evidence stays separate.
                     decision = self.store.authorize_response(db, episode, lease=lease)
                     result["response_decision"] = decision.model_dump(mode="json")
+                    result["final_response"] = deliver_response(final, decision)
                     if decision.outcome == "DENY":
                         result["final_response"] = ""
                         result["reason"] = decision.reason

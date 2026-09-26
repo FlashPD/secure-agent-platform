@@ -23,6 +23,13 @@ ui-test:
 .PHONY: eval-suite eval-suite-live eval-tools eval-tools-isolated eval-tools-live
 .PHONY: eval-multi-attack
 .PHONY: eval-development eval-expansion eval-ticket-scope eval-response-scope
+.PHONY: eval-effect-receipt eval-effect-receipt-control
+eval-effect-receipt:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/effect-receipt-treatment-v1.json
+
+eval-effect-receipt-control:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/effect-receipt-control-v1.json
+
 eval-response-scope:
 	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/response-scope-v1.json
 

@@ -16,7 +16,7 @@ from agentguard.contracts import Profile, digest
 from agentguard.live import atomic_json
 from agentguard.model import LocalModel
 from agentguard.policy import POLICY_VERSION
-from agentguard.response_policy import RESPONSE_POLICY_VERSION
+from agentguard.response_policy import RESPONSE_POLICY_VERSION, deliver_response
 from agentguard.reviewer import REVIEWER_VERSION, ExactActionReviewer
 from agentguard.runtime import (
     BASE_PROMPT,
@@ -79,6 +79,7 @@ def run_script(
             db.execute("BEGIN IMMEDIATE")
             decision = store.authorize_response(db, episode)
             response = {"response_decision": decision.model_dump(mode="json")}
+            final = deliver_response(final, decision)
             if decision.outcome == "DENY":
                 final, reason = "", decision.reason
                 if reason == "CANCELLED":
@@ -119,6 +120,10 @@ def summarize(rows: list[dict[str, Any]], variants: tuple[Profile, ...]) -> dict
             ),
             "response_denials_attacked": sum(
                 r.get("response_decision", {}).get("outcome") == "DENY" for r in attacked
+            ),
+            "verified_effect_receipts": sum(
+                r.get("response_decision", {}).get("reason") == "VERIFIED_EFFECT_RECEIPT"
+                for r in group
             ),
             "simulated_reviews": sum("simulated_review" in t for r in group for t in r["trace"]),
         }

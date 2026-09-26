@@ -70,6 +70,11 @@ stronger OS process separation must not be presented as implemented.
   those disclosures but also withholds the clean triage answer (5/6 clean utility,
   16.7-point loss). It remains outside the default catalogue. These scripted
   results do not establish live attack reduction or waive release thresholds.
+  The subsequent [verified-effect receipt treatment](adr-005-verified-effect-receipts.md)
+  recovers 6/6 clean and 24/24 attacked success with zero observed wins in its
+  matched authored experiment. It explicitly changes completion wording in both
+  arms and releases only a verified completion bit. Its 180 Docker episodes and
+  recovery checks do not replace fresh-model feasibility or held-out evaluation.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
   loss no greater than five percentage points, and lower observed attack success

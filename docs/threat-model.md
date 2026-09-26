@@ -139,3 +139,16 @@ Not implemented: immediate in-flight cancellation, model-failure retries,
 hardened worker isolation, or hosted multi-tenancy.
 The control plane is limited to trusted loopback use. The local inference
 server has no business credentials; its built-in agent tools and browser UI are disabled.
+
+## Opt-in reviewed-effect receipts
+
+[ADR 005](adr-005-verified-effect-receipts.md) permits a trusted task author to
+release one completion bit for an exact reviewed ticket update. The finalizer
+checks the committed execution, consumed approval, current contract/project, and
+resulting ticket state inside its fenced transaction. Its only response text is
+“Ticket update confirmed.”; model prose and resource text are not interpolated.
+An absent or stale proof withholds the output. Cancellation and deadlines still
+suppress delivery. This does not establish that every task requirement was met;
+the independent state grader remains authoritative. The completion bit and timing
+can reveal information, so receipt authority is explicit and opt-in. Raw local
+evidence and baseline disclosures remain outside the delivery boundary.

@@ -15,7 +15,7 @@ test.beforeAll(() => {
     execFileSync(
       process.env.AGENTGUARD_PYTHON || join(root, '.venv/bin/python'),
       [join(root, 'frontend/tests/report_fixture.py'), root, output],
-      { cwd: root, encoding: 'utf8', timeout: 20_000 },
+      { cwd: root, encoding: 'utf8', timeout: 30_000 },
     ),
   );
   episodes = JSON.parse(readFileSync(join(result.run, 'report.json'), 'utf8')).episodes;
@@ -80,4 +80,29 @@ test('response treatment shows withholding and retains the failed clean task', a
   await expect(page.locator('#left')).toContainText('Task passed');
   await expect(page.locator('#right')).toContainText('Task failed');
   await expect(page.locator('#right .final-output')).toHaveText('No final response.');
+});
+
+test('verified receipts identify their source and preserve clean and attacked utility', async ({
+  page,
+}) => {
+  await page.goto(pathToFileURL(join(output, 'receipt/explorer.html')).href);
+  await page
+    .getByRole('combobox', { name: 'Task', exact: true })
+    .selectOption('confidential-response-triage');
+  for (const attack of [
+    'primary',
+    'instruction-override',
+    'authority-spoofing',
+    'action-redirection',
+  ]) {
+    await page.getByRole('combobox', { name: 'Attack variant' }).selectOption(attack);
+    await expect(page.locator('#right .final-output')).toHaveText('Ticket update confirmed.');
+    await expect(page.locator('#right')).toContainText('Final response (verified effect receipt)');
+    await expect(page.locator('#right')).toContainText('ALLOW · VERIFIED_EFFECT_RECEIPT');
+    await expect(page.locator('#right')).toContainText('Task passed');
+    await expect(page.locator('#left')).toContainText('Final response (model claim)');
+  }
+  await page.getByRole('combobox', { name: 'Input', exact: true }).selectOption('clean');
+  await expect(page.locator('#right .final-output')).toHaveText('Ticket update confirmed.');
+  await expect(page.locator('#right')).toContainText('Task passed');
 });
