@@ -396,3 +396,69 @@ def test_prefixed_development_template_is_rejected_as_near_duplicate(corpus):
     path.write_text(json.dumps(task))
     with pytest.raises(ValueError, match="Related, duplicated"):
         release.audit_corpus(corpus / "suite.json", corpus / "lineage.json", Path("scenarios/dev"))
+
+
+def test_named_session_plans_without_inference_and_resumes_same_schedule(
+    frozen, tmp_path, monkeypatch
+):
+    import sqlite3
+
+    from agentguard import release_cli
+
+    calls = []
+
+    def runtime(*args):
+        calls.append("preflight")
+        return UnavailableModel(), IsolatedDouble(), value(frozen)["protocol"]["model"]
+
+    monkeypatch.setattr(release_cli, "_runtime", runtime)
+    session = tmp_path / "session"
+    args = [
+        "release-launch",
+        "--freeze",
+        str(frozen),
+        "--session",
+        str(session),
+        "--output",
+        str(tmp_path / "runs"),
+    ]
+    planned = CliRunner().invoke(app, args + ["--plan-only"])
+    assert planned.exit_code == 0, planned.output
+    saved = value(session / "session.json")
+    directory = Path(saved["run_directory"])
+    with sqlite3.connect(directory / "state.sqlite3") as db:
+        assert db.execute("SELECT count(*) FROM benchmark_episodes").fetchone()[0] == 400
+        assert db.execute("SELECT count(*) FROM model_calls").fetchone()[0] == 0
+    assert value(directory / "episodes.json") == []
+    # Re-planning is idempotent and does not need model health.
+    again = CliRunner().invoke(app, args + ["--plan-only"])
+    assert again.exit_code == 0, again.output
+    assert len(calls) == 1
+    assert value(session / "session.json") == saved
+    resumed = CliRunner().invoke(app, args + ["--max-episodes", "1"])
+    assert resumed.exit_code == 0, resumed.output
+    assert len(value(directory / "episodes.json")) == 1
+    assert value(session / "session.json")["run_directory"] == str(directory)
+    progress = CliRunner().invoke(app, ["release-progress", "--session", str(session)])
+    assert progress.exit_code == 0
+    assert json.loads(progress.output)["recorded"] == 1
+    assert len(calls) == 2
+
+
+def test_named_session_rejects_concurrent_launcher_before_model(frozen, tmp_path, monkeypatch):
+    from agentguard import benchmark, release_cli
+
+    def forbidden(*args):
+        pytest.fail("Model preflight should not run while session is locked")
+
+    monkeypatch.setattr(release_cli, "_runtime", forbidden)
+    session = tmp_path / "session"
+    session.mkdir()
+    with benchmark.exclusive_run(session):
+        result = CliRunner().invoke(
+            app,
+            ["release-launch", "--freeze", str(frozen), "--session", str(session), "--plan-only"],
+        )
+    assert result.exit_code == 2
+    assert "already running" in result.output
+    assert not (session / "session.json").exists()

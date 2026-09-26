@@ -2,8 +2,9 @@
 
 The application, six tools, deterministic authorization tests, durable worker,
 operator console, twenty-task development corpus, and development evidence are implemented. The release is still
-experimental: the held-out corpus is pending. The frozen execution workflow and
-product-quality gate are implemented; their live release evidence is still pending.
+experimental: the forty-task decision corpus, frozen execution workflow, and
+product-quality gate are implemented. Live release evidence remains pending.
+Use [the self-service 400-episode runbook](run-400.md).
 Completing application features is distinct from validating agent behavior.
 See [when to run the 400-episode evaluation](release-evaluation.md) for the exact
 schedule, prerequisites, gate objectives, and execution order.
@@ -132,3 +133,15 @@ measured development outcomes, and remaining acceptance gaps. The
 lineage review still needed. A six-workflow, sixty-episode development comparison
 is available through `make eval-receipt-broad-live`; it is not held-out evidence.
 The earlier effort estimates are historical and have not been re-estimated.
+
+## Current handoff: run the frozen comparison
+
+Forty newly authored decision procedures and 160 fixed payloads are implemented
+with explicit relationship records. All 400 authored paths and negative grader
+checks are validated before freezing; this is not fresh inference. The holdout
+is at the decision-template level and shares primitives/attack mechanisms with
+development. It does not establish independent workflow or unseen-attack coverage.
+The named-session commands prepare, plan without generation, start/resume, inspect,
+and report the 400 fresh trials. Earlier estimates and missing-corpus statements
+above describe historical milestones. The full live comparison and remaining
+acceptance evidence are still outstanding.

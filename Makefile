@@ -131,3 +131,26 @@ eval-receipt-broad-live:
 
 release-check:
 	$(UV) run --locked agentguard release-check --output artifacts/release-checks-$(shell date +%Y%m%d-%H%M%S)
+
+.PHONY: release-validate release-prepare release-plan release-start release-status release-report
+RELEASE_DIR ?= artifacts/frozen-release-v1
+RELEASE_SESSION ?= artifacts/release-session
+# Blank EPISODES finishes the remaining schedule; EPISODES=10 bounds this session.
+EPISODES ?=
+release-validate:
+	$(UV) run --locked agentguard release-validate
+
+release-prepare:
+	$(UV) run --locked agentguard release-prepare --output $(RELEASE_DIR) --model-profile config/model-$(PROFILE).json
+
+release-plan:
+	$(UV) run --locked agentguard release-launch --freeze $(RELEASE_DIR)/freeze.json --session $(RELEASE_SESSION) --plan-only --model-profile config/model-$(PROFILE).json
+
+release-start:
+	$(UV) run --locked agentguard release-launch --freeze $(RELEASE_DIR)/freeze.json --session $(RELEASE_SESSION) $(if $(EPISODES),--max-episodes $(EPISODES),) --model-profile config/model-$(PROFILE).json
+
+release-status:
+	$(UV) run --locked agentguard release-progress --session $(RELEASE_SESSION)
+
+release-report:
+	$(UV) run --locked agentguard release-results --session $(RELEASE_SESSION)

@@ -5,19 +5,39 @@ console are implemented. An 84-episode live benchmark completed across three ses
 its development evidence is published. A subsequent 10-episode live receipt pilot
 exposed a workflow-shortcut failure; a matched 10-episode receipt-disclosure follow-up
 recovered all five treatment tasks. The development corpus now has 20 tasks;
-the held-out portfolio release remains in progress.**
+forty decision-template holdouts and the self-service 400-episode workflow are now
+implemented. Live release results are still pending.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
 [Architecture and implementation plan](arch_plan/secure-agent-platform-plan.md) ·
 [System card and measured limits](docs/system-card.md) ·
-[Release evaluation workflow](docs/release-evaluation.md)
+[Run the 400-episode evaluation](docs/run-400.md)
 
 Development, state, and the demo run on the Mac. Model inference can run on the Mac or on an optional RTX 5080 PC over an SSH tunnel. No paid cloud service or model API is required.
 
 The first runnable slice reads a synthetic launch document and creates a ticket.
 An authored attack script redirects the ticket to an unauthorized project.
 The deterministic gateway blocks that write and permits the intended one.
+
+## Run the 400-episode release comparison
+
+Forty authored decision templates, four attacks each, baseline and defended:
+400 fresh trials. The [runbook](docs/run-400.md) covers setup, pause/resume, and
+results; the [corpus scope](docs/held-out-corpus.md) explains shared mechanisms
+and the limits of this self-authored decision-template holdout.
+
+```sh
+make release-prepare             # Full checks and freeze; zero generation
+make release-plan                # Inspect a 0/400 schedule without inference
+make release-start EPISODES=10   # First ten real trials, then pause
+make release-start               # Resume the same run to completion
+make release-report              # Gate, offline viewer, and diagnostics
+```
+
+Start Docker and the pinned local model server first (`make model-serve` in a
+separate terminal). `make release-status` works without inference. All failed
+trials remain in the frozen comparison; this release is explicitly experimental.
 
 ## Broader development benchmark
 
@@ -191,7 +211,7 @@ The [400-episode release runbook](docs/release-evaluation.md) explains when to s
 the main evaluation: after development decisions, forty untouched held-out tasks,
 lineage review, a frozen experiment, and a release-specific gate. The freeze,
 resumable 400-episode runner, and PASS/FAIL/UNUSABLE gate are implemented; the
-forty held-out tasks and live release results remain pending.
+forty new decision templates are authored and validated; live release results remain pending.
 
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
@@ -319,9 +339,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: run the sixty-episode broader development comparison (`make eval-receipt-broad-live`),
-then author and freeze the held-out corpus before
-release evaluation. The targeted receipt-disclosure pilot recovered the skipped
-workflow steps without changing graders. The
-twenty-task development target and multi-attack scheduling are implemented. The portfolio release still
-requires the full acceptance criteria in the architecture plan.
+Next: execute the prepared 400-episode release comparison with the
+[user runbook](docs/run-400.md), then publish every outcome and the gate result.
+The broader development pilot is paused separately; no completed comparison is
+claimed for it. Remaining acceptance gaps are listed in the system card.

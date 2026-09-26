@@ -20,9 +20,9 @@ three-seed baseline/defended repeat is 1,200 episodes total, not required for v1
 | Prerequisite | Current state | Exit condition |
 |---|---|---|
 | Development behavior | Twenty tasks; ticket/response treatments have authored evidence; the [targeted live receipt pilot](receipt-live-pilot.md) found skipped required steps | Select the treatment using development evidence and explicitly retain its limitations |
-| Held-out corpus | Not authored/frozen | Forty new task templates, four fixed attacks each, validated independent state/output graders |
-| Split integrity | Mechanical overlap checks implemented; semantic lineage review still pending | Related/paraphrased templates stay in one split; provenance and author knowledge recorded |
-| Frozen experiment | Implemented; awaiting reviewed held-out assets | Pin task/payload/grader hashes, model/runtime/tool image, prompts, policy, budgets, seed, approval simulator, and thresholds |
+| Held-out corpus | Forty authored decision templates; deterministic validation implemented | Forty new task templates, four fixed attacks each, validated independent state/output graders |
+| Split integrity | Eight declared decision families; closest development relationships and shared mechanisms recorded | Related/paraphrased templates stay in one split; provenance and author knowledge recorded |
+| Frozen experiment | Implemented; `make release-prepare` creates or verifies the local freeze | Pin task/payload/grader hashes, model/runtime/tool image, prompts, policy, budgets, seed, approval simulator, and thresholds |
 | Release execution and gate | Frozen execution, resume, state regrading, and PASS/FAIL/UNUSABLE gate implemented | Verify the freeze before execution and scoring; require a complete compatible schedule; report PASS, FAIL, or unusable evidence |
 | Reliability and reproduction | Existing deterministic recovery/security tests and Docker probes; some acceptance evidence outstanding | Pass hard invariants and complete or explicitly scope remaining acceptance gaps with release consequences |
 
@@ -77,10 +77,10 @@ verified artifacts, the system card, and a clean-checkout reviewer walkthrough.
 
 ## Implemented execution path (September 26, 2026)
 
-The freeze, execution, and release-specific gate are now implemented. The corpus
-is still pending; **no 400-episode live release result is claimed**. The existing
-development fixtures cannot satisfy the held-out prerequisite. Follow
-[the authoring and lineage requirements](held-out-authoring.md) first.
+The freeze, execution, release-specific gate, and forty-task decision corpus are
+implemented. **No 400-episode live release result is claimed**. Use the
+[self-service runbook](run-400.md); read [the corpus scope](held-out-corpus.md)
+for the decision-template holdout and shared-mechanism limitations.
 
 A [six-workflow development comparison](broader-receipt-feasibility.md) is available as
 `make eval-receipt-broad-live`: 6 tasks × 5 inputs × 2 profiles = 60 fresh trials.
@@ -88,7 +88,8 @@ It combines the existing response-scope fixtures with the template-only receipt
 fixture, without changing task wording, payloads, or graders. The companion
 `make eval-receipt-broad` is authored replay. Both remain development evidence.
 
-After authoring and reviewing the corpus, the supported sequence is:
+The short path is `make release-prepare`, `make release-plan`, then
+`make release-start EPISODES=10`. The underlying explicit sequence is:
 
 ```sh
 # Freeze the code and validation assets before starting; keep the server running.
@@ -97,7 +98,7 @@ make model-serve
 # In another terminal. Use a new output directory for each retained check run.
 uv run --locked agentguard release-check --output artifacts/release-checks-v1
 
-# These two corpus paths are placeholders until the forty new tasks are authored.
+# The forty authored tasks and lineage records ship in the repository.
 uv run --locked agentguard release-freeze \
   --suite scenarios/held-out/suite-v1.json \
   --lineage scenarios/held-out/lineage-v1.json \

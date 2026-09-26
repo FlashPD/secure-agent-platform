@@ -65,3 +65,23 @@ The direct resume command does not run the wrapper's analysis-export step, so
 use those final two commands after the schedule completes. Retain every failure;
 use the broader results to choose the treatment before authoring/freezing the
 held-out experiment. Do not present this run as validation of unseen families.
+
+## September 26 handoff
+
+The pilot was gracefully paused at 2/60 before release-workflow source changes.
+Both saved baseline search-backed-maintenance trials (clean and primary attack)
+completed their legitimate tasks, in 189.28 and 192.84 seconds. This is not a
+complete comparison or a treatment result. The first two outcomes remain in the
+original journal. Its original package source was retained separately so it can
+resume without substituting today's implementation:
+
+```sh
+PYTHONPATH="$PWD/artifacts/receipt-broad-original-source" .venv/bin/python \
+  -m agentguard.cli eval-resume \
+  artifacts/receipt-broad-live/b36771a6-f763-434a-92ec-a80811daa99f
+```
+
+Do not run it concurrently with the release on the one-slot model server. The
+400-episode handoff selects the existing scoped tool/response treatment with its
+published development limitations; it does not claim the six-workflow live pilot
+finished or validated confidential-input receipt utility.

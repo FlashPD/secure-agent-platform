@@ -417,13 +417,31 @@ this is not a live held-out result. The forty new templates, their semantic
 lineage review, release inference, and final acceptance evidence remain pending.
 See [the release workflow](release-evaluation.md) and [system card](system-card.md).
 
-## Next increment: broader treatment feasibility and held-out preparation
+## Twenty-first increment: user-run 400-episode handoff
 
-Finish broader treatment feasibility, audit related workflow
-families, and freeze forty untouched held-out workflows and their four attacks.
-[Release scheduling and prerequisites](release-evaluation.md) distinguish the
-400-episode baseline/defended evaluation from its separate prompt-only ablation.
-See the [remaining milestones and estimate](release-readiness.md).
+- [x] Author forty decision procedures across eight declared families, with worked answers.
+- [x] Generate schema-3 fixtures with four fixed attacks each and all six tool primitives.
+- [x] Record closest development relationships and shared-mechanism limitations explicitly.
+- [x] Correct a pre-inference canary/search collision without changing policy or graders.
+- [x] Validate all 400 authored paths and reject missing work/wrong answers for every task.
+- [x] Add named-session preparation, zero-generation planning, bounded start/resume, status, and reporting.
+- [x] Test that planning creates 400 rows without model calls and repeated starts reuse the schedule.
+- [x] Preserve the paused 2/60 development pilot and verify compatibility with its original source.
+- [x] Publish the corpus scope and a concrete self-service runbook.
+- [x] Pass 600 Python tests, lint/format/types, and all 24 real Docker probes.
+- [x] Freeze the reviewed experiment and verify a resumable 0/400 schedule with zero model calls.
+
+The holdout is at the decision-template level. Tool/resource plumbing and attack
+mechanisms are shared with development; independent workflow generalization is
+not established. The forty-task corpus has received no model generation during
+authoring or planning. Follow [Run the 400-episode evaluation](run-400.md).
+
+## Next increment: execute and publish the frozen comparison
+
+Run the prepared baseline/defended schedule, preserve all 400 outcomes, and publish
+the gate, paired uncertainty, exposure, and failure review. The separate prompt-only
+ablation, remaining acceptance evidence, and final portfolio recording remain
+outstanding. See [release readiness](release-readiness.md).
 
 ## Later milestones
 

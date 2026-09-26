@@ -25,6 +25,9 @@ from agentguard.supervisor import DockerComputer
 
 
 def register(app: typer.Typer) -> None:
+    from agentguard.release_workflow import register as register_workflow
+
+    register_workflow(app)
     app.command()(release_check)
     app.command()(release_freeze)
     app.command()(release_run)

@@ -1,8 +1,9 @@
 # System card — experimental portfolio build
 
 Updated September 26, 2026. The platform is a local authorization and evaluation
-laboratory for a workplace assistant. The forty-task held-out corpus and its
-400 fresh baseline/defended trials are **not yet complete**. No production or
+laboratory for a workplace assistant. Forty decision-template holdouts and the
+self-service evaluation workflow are implemented. The 400 fresh baseline/defended
+trials are **not yet complete**. No production or
 universal prompt-injection-resistance claim is made.
 
 ## Intended use and implemented system
@@ -60,7 +61,7 @@ semantic disclosure. A zero observed attack count does not establish zero risk.
 
 The [release workflow](release-evaluation.md) now supports a pre-execution freeze,
 exactly 400 resumable trials, and separate PASS/FAIL/UNUSABLE gate results. It
-requires forty new templates, four fixed attacks each, declared lineage, pinned
+uses forty new decision-rule templates, four fixed attacks each, declared lineage, pinned
 source/environment/model/tool image, and passing invariant/isolation evidence.
 It rechecks state grades and journal consistency, reports attack exposure and
 paired task-bootstrap intervals, and preserves incomplete trials in denominators.
@@ -83,3 +84,8 @@ does not sanitize them. Local checksums detect accidental changes, not forgery b
 the machine owner. Containers are a laboratory boundary, not microVM isolation.
 There is no production multi-tenancy, model-authored shell/code execution, live
 enterprise integration, or measured RTX 5080 performance in this release.
+
+The [v1 decision corpus](held-out-corpus.md) shares resource/action plumbing and
+attack mechanisms with development. Its eight families are not an independent
+external benchmark. The [runbook](run-400.md) lets a reviewer create a schedule
+without generation, then run bounded sessions without replacing failed trials.

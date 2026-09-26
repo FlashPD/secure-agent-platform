@@ -1,6 +1,8 @@
 # Authoring the held-out release corpus
 
-Forty new task templates are still required. Existing development fixtures,
+The forty decision-rule templates are now authored in `scenarios/held-out/`.
+See [their scope and relationship review](held-out-corpus.md). The rules below
+continue to govern subsequent corpora. Existing development fixtures,
 renamed copies, paraphrases, and descendants of their workflow templates cannot
 become held-out data. Do not create forty copies merely to obtain 400 rows.
 The current development catalogue and its recorded treatment variants remain
