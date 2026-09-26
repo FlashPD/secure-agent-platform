@@ -142,6 +142,7 @@ def run_suite(
     progress: Callable[[Path, int, int], None] | None = None,
     stop_requested: Callable[[], bool] | None = None,
     max_episodes: int | None = None,
+    release_freeze: dict[str, Any] | None = None,
 ) -> Path:
     if max_episodes is not None and max_episodes < 1:
         raise ValueError("Session episode limit must be positive")
@@ -151,7 +152,22 @@ def run_suite(
         raise ValueError("Live suite evaluation requires isolated tools")
     if model is not None and model_evidence is None:
         raise ValueError("Live evaluation requires pinned model evidence")
-    suite, fixtures = load_suite(suite_path)
+    suite, fixtures = load_suite(suite_path, allow_held_out=release_freeze is not None)
+    if release_freeze is not None:
+        from agentguard.release import protocol, verify_suite
+
+        verify_suite(release_freeze, suite_path)
+        if model is None or computer is None or model_evidence is None:
+            raise ValueError("Frozen releases require fresh inference and isolated tools")
+        if variants != ("baseline", "defended") or not simulate_approvals:
+            raise ValueError("Frozen release requires baseline/defended and simulated review")
+        if release_freeze["protocol"] != protocol(
+            model_evidence,
+            model.config.model_dump(mode="json"),
+            getattr(computer, "image_id", ""),
+            getattr(computer, "timeout", 0),
+        ):
+            raise ValueError("Current execution protocol differs from frozen experiment")
     run_dir = output_root / str(uuid.uuid4())
     run_dir.mkdir(parents=True, exist_ok=False)
     store = Store(run_dir / "state.sqlite3", computer=computer)
@@ -212,7 +228,7 @@ def run_suite(
         "python": platform.python_version(),
         "mode": "fresh_local_inference" if model else "scripted_suite_replay",
         "fresh_inference": model is not None,
-        "release_evidence": False,
+        "release_evidence": release_freeze is not None,
         "suite_sha256": hashlib.sha256(suite_path.read_bytes()).hexdigest(),
         "source_sha256": digest(
             {name: hashlib.sha256(text.encode()).hexdigest() for name, text in source.items()}
@@ -236,6 +252,13 @@ def run_suite(
         "simulated_approvals": simulate_approvals,
         "reviewer_version": REVIEWER_VERSION if simulate_approvals else None,
     }
+    if release_freeze is not None:
+        from agentguard.release import verify_manifest
+
+        manifest["release_freeze"] = release_freeze
+        manifest["validation_sha256"] = release_freeze["protocol"]["validation_sha256"]
+        verify_manifest(release_freeze, manifest)
+        atomic_json(run_dir / "suite_freeze.json", release_freeze)
     atomic_json(run_dir / "manifest.json", manifest)
     with benchmark.exclusive_run(run_dir):
         benchmark.initialize(store, manifest)
@@ -267,7 +290,19 @@ def resume_suite(
     with benchmark.exclusive_run(run_dir):
         manifest = json.loads((run_dir / "manifest.json").read_text())
         suite_path = benchmark.verify_files(run_dir, manifest)
-        _, fixtures = load_suite(suite_path)
+        frozen = manifest.get("release_freeze")
+        if manifest.get("release_evidence") or frozen is not None:
+            from agentguard.release import validation_hash, verify_manifest, verify_suite
+
+            if frozen is None:
+                raise ValueError("Release resume requires its frozen experiment")
+            verify_manifest(frozen, manifest)
+            verify_suite(frozen, suite_path)
+            if frozen["protocol"]["validation_sha256"] != validation_hash():
+                raise ValueError("Release validation assets changed")
+            if json.loads((run_dir / "suite_freeze.json").read_text()) != frozen:
+                raise ValueError("Release freeze snapshot changed")
+        _, fixtures = load_suite(suite_path, allow_held_out=frozen is not None)
         if not (run_dir / "state.sqlite3").is_file():
             raise ValueError("Benchmark state database is missing")
         store = Store(run_dir / "state.sqlite3", computer=computer)
@@ -410,14 +445,18 @@ def _export_suite(
     }
     atomic_json(run_dir / "report.json", report)
     label = (
-        "Live development suite"
+        "Live frozen release suite"
+        if manifest.get("release_evidence")
+        else "Live development suite"
         if manifest["fresh_inference"]
         else "Scripted suite replay — no model inference"
     )
     lines = [
         f"# {label}",
         "",
-        "Development fixtures; not a held-out release benchmark.",
+        "Frozen held-out comparison. Use release-gate for the product objectives."
+        if manifest.get("release_evidence")
+        else "Development fixtures; not a held-out release benchmark.",
         "",
         "| Task | Profile | Input | Status | Task success | Attack success |",
         "|---|---|---|---|---|---|",

@@ -206,12 +206,16 @@ class DevelopmentTask(Contract):
 class SuiteManifest(Contract):
     schema_version: Literal[1]
     id: Identifier
-    split: Literal["development"]
+    split: Literal["development", "held_out"]
     tasks: tuple[str, ...] = Field(min_length=1, max_length=60)
 
 
-def load_suite(path: Path) -> tuple[SuiteManifest, list[tuple[Path, bytes, DevelopmentTask]]]:
+def load_suite(
+    path: Path, *, allow_held_out: bool = False
+) -> tuple[SuiteManifest, list[tuple[Path, bytes, DevelopmentTask]]]:
     manifest = SuiteManifest.model_validate_json(path.read_bytes())
+    if manifest.split == "held_out" and not allow_held_out:
+        raise ValueError("Held-out suites require the frozen release workflow")
     rows = []
     seen: set[str] = set()
     for name in manifest.tasks:

@@ -168,6 +168,10 @@ def analyze(report: dict[str, Any], *, resamples: int = 5000, seed: int = 42) ->
         raise ValueError("Use between 100 and 100000 bootstrap resamples")
     rows, tasks, variants = observations(report)
     manifest = report["manifest"]
+    if manifest.get("release_evidence"):
+        from agentguard.release import verify_manifest
+
+        verify_manifest(manifest["release_freeze"], manifest)
     fresh = manifest["fresh_inference"]
     if type(fresh) is not bool or manifest["mode"] != (
         "fresh_local_inference" if fresh else "scripted_suite_replay"
@@ -365,7 +369,7 @@ def analyze(report: dict[str, Any], *, resamples: int = 5000, seed: int = 42) ->
                 "reviewer_version",
             )
         },
-        "release_evidence": False,
+        "release_evidence": bool(manifest.get("release_evidence", False)),
         "scheduled_episodes": len(rows),
         "task_clusters": len(tasks),
         "attacks_per_task": {task: len(ids) for task, ids in attack_ids.items()},
@@ -379,7 +383,9 @@ def analyze(report: dict[str, Any], *, resamples: int = 5000, seed: int = 42) ->
         "comparisons": comparisons,
         "failures": failures,
         "limits": [
-            "Development tasks, one trial per clean/attack input and profile; not a release gate.",
+            "Frozen tasks, one trial per clean/attack input and profile; consult release-gate."
+            if manifest.get("release_evidence")
+            else "Development tasks; one trial per input/profile; not a release gate.",
             "Payloads are correlated: bootstrap draws retain all attacks within each task.",
             "Intervals resample these authored tasks, not unseen attacks or model randomness.",
             "A degenerate interval (including zero wins) is not evidence of zero population risk.",
@@ -395,7 +401,9 @@ def markdown(analysis: dict[str, Any]) -> str:
         return f"{value['numerator']}/{value['denominator']}"
 
     lines = [
-        "# Paired development analysis",
+        "# Frozen release comparison — consult the separate product gate"
+        if analysis.get("release_evidence")
+        else "# Paired development analysis",
         "",
         f"Mode: `{analysis['mode']}`.",
         "",

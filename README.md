@@ -9,7 +9,9 @@ the held-out portfolio release remains in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
-[Architecture and implementation plan](arch_plan/secure-agent-platform-plan.md)
+[Architecture and implementation plan](arch_plan/secure-agent-platform-plan.md) ·
+[System card and measured limits](docs/system-card.md) ·
+[Release evaluation workflow](docs/release-evaluation.md)
 
 Development, state, and the demo run on the Mac. Model inference can run on the Mac or on an optional RTX 5080 PC over an SSH tunnel. No paid cloud service or model API is required.
 
@@ -187,7 +189,9 @@ This is a one-task development result, not a held-out security claim. See
 
 The [400-episode release runbook](docs/release-evaluation.md) explains when to start
 the main evaluation: after development decisions, forty untouched held-out tasks,
-lineage review, a frozen experiment, and a release-specific gate. It is not ready yet.
+lineage review, a frozen experiment, and a release-specific gate. The freeze,
+resumable 400-episode runner, and PASS/FAIL/UNUSABLE gate are implemented; the
+forty held-out tasks and live release results remain pending.
 
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
@@ -315,7 +319,8 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: finish broader treatment feasibility, then freeze the held-out corpus before
+Next: run the sixty-episode broader development comparison (`make eval-receipt-broad-live`),
+then author and freeze the held-out corpus before
 release evaluation. The targeted receipt-disclosure pilot recovered the skipped
 workflow steps without changing graders. The
 twenty-task development target and multi-attack scheduling are implemented. The portfolio release still

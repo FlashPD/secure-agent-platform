@@ -25,6 +25,7 @@ from agentguard.live import prepare_local_model, run_live_smoke
 from agentguard.model import inference_environment
 from agentguard.model_setup import fetch_models, serve_command
 from agentguard.policy_benchmark import write_policy_benchmark
+from agentguard.release_cli import register as register_release_commands
 from agentguard.replay import run_replay
 from agentguard.sandbox_setup import build_images, smoke
 from agentguard.storage import LeaseLost
@@ -36,6 +37,7 @@ app = typer.Typer(
     help="Agent authorization laboratory. Replay is not live inference.",
     pretty_exceptions_show_locals=False,
 )
+register_release_commands(app)
 
 
 @app.command()
@@ -376,6 +378,9 @@ def _suite_output(result: Path) -> None:
     typer.echo(f"Report: {result / 'report.md'}")
     report = json.loads((result / "report.json").read_text())
     typer.echo(json.dumps(report["counts"], indent=2))
+    if report["manifest"].get("release_evidence"):
+        typer.echo("Frozen release execution complete. Run release-gate with the original freeze.")
+        return
     if any(
         r["status"] != "COMPLETED"
         or (

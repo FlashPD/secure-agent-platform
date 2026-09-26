@@ -2,7 +2,8 @@
 
 The application, six tools, deterministic authorization tests, durable worker,
 operator console, twenty-task development corpus, and development evidence are implemented. The release is still
-experimental: the planned held-out corpus and product-quality gate do not exist.
+experimental: the held-out corpus is pending. The frozen execution workflow and
+product-quality gate are implemented; their live release evidence is still pending.
 Completing application features is distinct from validating agent behavior.
 See [when to run the 400-episode evaluation](release-evaluation.md) for the exact
 schedule, prerequisites, gate objectives, and execution order.
@@ -115,3 +116,19 @@ stronger OS process separation must not be presented as implemented.
 The original [architecture plan](../arch_plan/secure-agent-platform-plan.md)
 remains the acceptance target. [Implementation progress](progress.md) and linked
 versioned evidence distinguish completed work from these remaining objectives.
+
+## September 26 update: release infrastructure
+
+The pre-execution freeze, conservative split checks, source-bound invariant
+evidence, exactly-400 scheduling, compatible resume, and separate behavioral gate
+are implemented. Gate outcomes are PASS/FAIL/UNUSABLE; complete failures retain
+their denominators. Offline scoring rechecks journal/state/call consistency and
+includes attack exposure and paired uncertainty. See the updated
+[commands and limits](release-evaluation.md).
+
+The [system card](system-card.md) now consolidates intended use, model provenance,
+measured development outcomes, and remaining acceptance gaps. The
+[authoring contract](held-out-authoring.md) defines the forty-task corpus and
+lineage review still needed. A six-workflow, sixty-episode development comparison
+is available through `make eval-receipt-broad-live`; it is not held-out evidence.
+The earlier effort estimates are historical and have not been re-estimated.

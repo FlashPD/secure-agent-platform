@@ -137,10 +137,13 @@ function render() {
   episode($("right"), $("right-profile").value, task, attack);
 }
 $("mode").textContent = data.analysis.mode === "fresh_local_inference"
-  ? "Fresh local inference · development evidence" : "Authored replay · zero model trials";
+  ? (data.analysis.release_evidence ? "Fresh local inference · frozen release comparison"
+    : "Fresh local inference · development evidence") : "Authored replay · zero model trials";
 $("accounting").textContent = data.analysis.scheduled_episodes
   + " scheduled episodes accounted for · "
-  + data.analysis.task_clusters + " authored task clusters · not a release benchmark";
+  + data.analysis.task_clusters + (data.analysis.release_evidence
+    ? " authored task clusters · consult the separate product gate"
+    : " authored task clusters · not a release benchmark");
 const profiles = Object.keys(data.analysis.profiles);
 for (const profile of profiles) {
   const values = data.analysis.profiles[profile];

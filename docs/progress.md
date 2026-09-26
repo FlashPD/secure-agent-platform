@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated September 24, 2026. The architecture plan remains the target design.
+Updated September 26, 2026. The architecture plan remains the target design.
 
 ## First increment: authorization kernel and scripted evidence
 
@@ -396,6 +396,26 @@ reproduction and [the measured evidence](evidence/receipt-disclosure-2026-09-25/
 Clean success improves from 0/1 to 1/1 and attacked success from 0/4 to 4/4.
 Both arms have zero observed wins, but only treatment encounters all four payloads.
 This known-task result does not replace broader development or held-out evaluation.
+
+## Twentieth increment: frozen release execution and product gate
+
+- [x] Add explicit held-out loading while preserving development-only defaults.
+- [x] Audit declared ancestry, family/ID/text overlap, and all four attack families.
+- [x] Bind retained invariant checks to source, tests, lockfile, environment, and tool image.
+- [x] Snapshot tasks and protocol before inference; refuse freeze overwrites.
+- [x] Schedule exactly 400 baseline/defended trials and preserve existing resume accounting.
+- [x] Reject incompatible or incomplete evidence; independently regrade saved final state.
+- [x] Check the journal and model-call exports; retain failures, exposure, and uncertainty.
+- [x] Implement PASS/FAIL/UNUSABLE outcomes and keep acceptance gaps explicitly experimental.
+- [x] Add a system card, held-out authoring contract, and operational release commands.
+- [x] Define the unchanged six-workflow broader treatment comparison (60 development episodes).
+- [x] Pass 556 Python tests, lint/format/type checks, and all 24 real Docker probes.
+- [x] Verify replay/development/release viewer labels in three local Chrome scenarios.
+
+Validation uses explicit test doubles, including a complete 400-failure schedule;
+this is not a live held-out result. The forty new templates, their semantic
+lineage review, release inference, and final acceptance evidence remain pending.
+See [the release workflow](release-evaluation.md) and [system card](system-card.md).
 
 ## Next increment: broader treatment feasibility and held-out preparation
 

@@ -120,3 +120,14 @@ model-serve:
 
 eval-smoke:
 	$(UV) run --locked agentguard eval-smoke --profile config/model-$(PROFILE).json
+
+.PHONY: eval-receipt-broad eval-receipt-broad-live release-check
+# Six known development tasks × five inputs × two profiles; never held-out evidence.
+eval-receipt-broad:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/receipt-broad-v1.json --variants baseline,defended
+
+eval-receipt-broad-live:
+	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/receipt-broad-v1.json --variants baseline,defended --live --model-profile config/model-$(PROFILE).json
+
+release-check:
+	$(UV) run --locked agentguard release-check --output artifacts/release-checks-$(shell date +%Y%m%d-%H%M%S)
