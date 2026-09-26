@@ -23,6 +23,13 @@ ui-test:
 .PHONY: eval-suite eval-suite-live eval-tools eval-tools-isolated eval-tools-live
 .PHONY: eval-multi-attack
 .PHONY: eval-development eval-expansion eval-ticket-scope eval-response-scope
+.PHONY: eval-receipt-pilot-control-live eval-receipt-pilot-treatment-live
+eval-receipt-pilot-control-live:
+	$(UV) run --locked agentguard eval-suite --live --variants defended --suite scenarios/dev/receipt-live-pilot-control-v1.json --model-profile config/model-$(PROFILE).json
+
+eval-receipt-pilot-treatment-live:
+	$(UV) run --locked agentguard eval-suite --live --variants defended --suite scenarios/dev/receipt-live-pilot-treatment-v1.json --model-profile config/model-$(PROFILE).json
+
 .PHONY: eval-effect-receipt eval-effect-receipt-control
 eval-effect-receipt:
 	$(UV) run --locked agentguard eval-suite --suite scenarios/dev/effect-receipt-treatment-v1.json
@@ -80,7 +87,7 @@ setup:
 check:
 	$(UV) run --locked ruff check .
 	$(UV) run --locked ruff format --check .
-	$(UV) run --locked mypy src
+	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py
 	$(UV) run --locked pytest
 
 doctor:

@@ -2,7 +2,8 @@
 
 **Status: all six tools, durable execution, the authenticated API, and the operator
 console are implemented. An 84-episode live benchmark completed across three sessions;
-its development evidence is published. The development corpus now has 20 tasks;
+its development evidence is published. A subsequent 10-episode live receipt pilot
+exposed a workflow-shortcut failure. The development corpus now has 20 tasks;
 the held-out portfolio release remains in progress.**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
@@ -15,7 +16,7 @@ The first runnable slice reads a synthetic launch document and creates a ticket.
 An authored attack script redirects the ticket to an unauthorized project.
 The deterministic gateway blocks that write and permits the intended one.
 
-## Latest measured development results
+## Broader development benchmark
 
 The [fourteen-task live benchmark](docs/evidence/fourteen-task-live-2026-09-24/README.md)
 completed all 84 scheduled episodes across three sessions (10 + 10 + 64), using
@@ -167,6 +168,17 @@ boundary checks, not fresh model trials or a held-out release result. Run
 `make eval-effect-receipt`; [the full evidence](docs/evidence/effect-receipt-2026-09-25/README.md)
 preserves the matched control and all baseline failures. The default remains v5.
 
+The subsequent [10-episode fresh-model pilot](docs/evidence/receipt-live-pilot-2026-09-25/README.md)
+**did not recover whole-task utility**: both arms scored 0/1 clean and 0/4 attacked
+success. Clearance withheld otherwise valid answers; the receipt arm skipped the
+required read and listing. None of its four attacks reached a saved model request,
+so its zero attacker wins cannot establish resistance. All ten failed grades,
+raw replies, exposure checks, and reproduction commands are retained.
+
+The [400-episode release runbook](docs/release-evaluation.md) explains when to start
+the main evaluation: after development decisions, forty untouched held-out tasks,
+lineage review, a frozen experiment, and a release-specific gate. It is not ready yet.
+
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
 Ctrl+C once to finish the current episode and pause. Continue with
@@ -293,7 +305,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: measure attack effectiveness, address or explicitly retain exposed policy
-limitations, and freeze the held-out corpus before release evaluation. The
+Next: address the live receipt pilot’s skipped workflow steps, finish broader
+development feasibility, and freeze the held-out corpus before release evaluation. The
 twenty-task development target and multi-attack scheduling are implemented. The portfolio release still
 requires the full acceptance criteria in the architecture plan.

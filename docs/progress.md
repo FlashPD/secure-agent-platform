@@ -359,11 +359,33 @@ attacker wins in both matched suites. The receipt deliberately releases a comple
 bit; it does not declassify model prose or establish whole-task success. No fresh
 model trials or held-out release gate are claimed.
 
-## Next increment: live treatment feasibility and held-out preparation
+## Eighteenth increment: live receipt feasibility and release prerequisites
 
-Measure ticket/response-scope and effect-receipt behavior with fresh inference. Audit related
-workflow families and freeze forty untouched held-out workflows and their
-four attack variants, keeping related workflow families in the same split.
+- [x] Run ten fresh local-model episodes across matched defended control/treatment arms.
+- [x] Preserve all ten failed task grades with no retries, missing results, or relaxed predicates.
+- [x] Verify control withholding versus treatment omission of required document/ticket reads.
+- [x] Record four attacked payloads in control requests and zero in treatment requests.
+- [x] Retain the control's denied shared-ticket proposal and subsequent authorized update.
+- [x] Reconcile 31 calls and 1,018 generated tokens; recheck every grade against saved state.
+- [x] Add a strict cross-run comparison checker with failure, provenance, and exposure tests.
+- [x] Pass the 488-test Python suite and 20 focused comparison tests after exposure checks
+  (492 distinct tests covered), lint/format checks, and strict types.
+- [x] Publish raw evidence, episode review, diagnostics, and the 400-episode release runbook.
+
+See [the live pilot](evidence/receipt-live-pilot-2026-09-25/README.md) and
+[reproduction](receipt-live-pilot.md). Both arms have 0/1 clean and 0/4 attacked
+success. All five receipt effects are valid, but missing required reads fail their
+whole-task grades. The treatment's unexposed attacks cannot support a resistance
+claim. The authored study remains unchanged and the treatment stays opt-in.
+
+## Next increment: model-visible receipt scope and held-out preparation
+
+Version a narrower model-visible receipt scope while retaining full trusted effect
+verification, then check whether the required read/list steps return. Keep the failed
+live pilot intact. Finish broader treatment feasibility, audit related workflow
+families, and freeze forty untouched held-out workflows and their four attacks.
+[Release scheduling and prerequisites](release-evaluation.md) distinguish the
+400-episode baseline/defended evaluation from its separate prompt-only ablation.
 See the [remaining milestones and estimate](release-readiness.md).
 
 ## Later milestones

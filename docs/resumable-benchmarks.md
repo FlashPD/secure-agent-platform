@@ -24,9 +24,10 @@ uv run --locked agentguard eval-suite --live \
 
 This schedules **84 development episodes**, runs up to ten this session, then
 prints `PAUSED`. Omit `--max-episodes` to keep running until you pause or the suite
-finishes. Each progress line includes the run directory. The planned 400-episode
-release corpus and four-attack scheduling are still future work; this change does
-not create that benchmark or claim its results.
+finishes. Each progress line includes the run directory. Four-attack scheduling is
+implemented in the newer development suites. The
+[400-episode held-out release](release-evaluation.md) still needs its corpus, freeze,
+and release-specific gate; this command does not create that benchmark.
 
 **Press Ctrl+C once in the benchmark terminal to request a safe pause.** The
 current episode finishes and its result is saved before the command exits. It

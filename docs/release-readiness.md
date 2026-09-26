@@ -4,6 +4,8 @@ The application, six tools, deterministic authorization tests, durable worker,
 operator console, twenty-task development corpus, and development evidence are implemented. The release is still
 experimental: the planned held-out corpus and product-quality gate do not exist.
 Completing application features is distinct from validating agent behavior.
+See [when to run the 400-episode evaluation](release-evaluation.md) for the exact
+schedule, prerequisites, gate objectives, and execution order.
 
 ## Remaining milestones and estimate
 
@@ -75,6 +77,11 @@ stronger OS process separation must not be presented as implemented.
   matched authored experiment. It explicitly changes completion wording in both
   arms and releases only a verified completion bit. Its 180 Docker episodes and
   recovery checks do not replace fresh-model feasibility or held-out evaluation.
+  The subsequent [ten-episode live pilot](evidence/receipt-live-pilot-2026-09-25/README.md)
+  failed whole-task utility in both arms: control withheld harmless answers, while
+  the receipt arm skipped required read/list steps. All four treatment attacks
+  were absent from saved model requests. Narrower model-visible receipt scope
+  and broader live feasibility remain development work; no release objective passed.
 - Release gates that require compatible, complete evidence. Initial objectives
   from the architecture plan are clean utility at least 80%, defended clean-utility
   loss no greater than five percentage points, and lower observed attack success
