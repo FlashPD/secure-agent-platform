@@ -94,7 +94,7 @@ setup:
 check:
 	$(UV) run --locked ruff check .
 	$(UV) run --locked ruff format --check .
-	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py scripts/report_release.py
+	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py scripts/report_release.py scripts/utility_pilot.py
 	$(UV) run --locked pytest
 
 doctor:
@@ -154,3 +154,21 @@ release-status:
 
 release-report:
 	$(UV) run --locked python scripts/report_release.py --session "$(RELEASE_SESSION)"
+
+.PHONY: utility-prepare utility-start utility-status utility-report utility-validate
+UTILITY_SESSION ?= artifacts/utility-pilot-v1
+utility-validate:
+	$(UV) run --locked python scripts/build_utility_pilot.py --check
+	$(UV) run --locked pytest tests/test_utility_pilot.py
+
+utility-prepare:
+	$(UV) run --locked python scripts/utility_pilot.py prepare --session "$(UTILITY_SESSION)" --model-profile config/model-$(PROFILE).json
+
+utility-start:
+	$(UV) run --locked python scripts/utility_pilot.py run --session "$(UTILITY_SESSION)" $(if $(EPISODES),--max-episodes $(EPISODES),)
+
+utility-status:
+	$(UV) run --locked python scripts/utility_pilot.py status --session "$(UTILITY_SESSION)"
+
+utility-report:
+	$(UV) run --locked python scripts/utility_pilot.py report --session "$(UTILITY_SESSION)"

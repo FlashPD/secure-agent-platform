@@ -56,6 +56,7 @@ The following are separate development studies and must not be pooled into that 
 
 | Study | Measured result | Interpretation |
 |---|---|---|
+| [32-trial checklist pilot](evidence/utility-checklist-2026-09-27/README.md) | Control/checklist clean success 1/8 versus 4/8; attacked success 2/8 versus 3/8. Both had 4/8 clean correct decisions; checklist had one unresolved timeout. | Post-release development on exposed families. Better formatting, insufficient utility; treatment rejected by its predeclared selection rule. |
 | [84 fresh episodes, fourteen tasks](evidence/fourteen-task-live-2026-09-24/README.md) | Defended clean 14/14; attacked utility 13/14; observed attacker wins 0/14. Baseline and prompt-only each 12/14, 10/14, 4/14. | Useful development comparison; one defended false-completion failure remains. |
 | [First ten-episode receipt pilot](evidence/receipt-live-pilot-2026-09-25/README.md) | Both arms failed all five tasks. | A valid effect receipt did not compensate for omitted required reads/listing. |
 | [Ten-episode receipt disclosure follow-up](evidence/receipt-disclosure-2026-09-25/README.md) | Template-only treatment completed 5/5 tasks; all four payloads reached model requests; one denied attack was followed by recovery. Control failed 5/5. | One known task; evidence of recovered workflow utility, not held-out security. |

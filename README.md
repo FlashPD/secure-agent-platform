@@ -42,6 +42,27 @@ Start Docker and the pinned local model server first (`make model-serve` in a
 separate terminal). `make release-status` works without inference. All failed
 trials remain in the frozen comparison; this release is explicitly experimental.
 
+## Utility improvement pilot
+
+The [checklist pilot](docs/utility-pilot.md) tests eight paired development cases
+after the failed release. Control and treatment share the model, permissions,
+budgets, and exact graders; the treatment adds a generic execution checklist.
+The 32-trial schedule covers decisions, formatting, committed actions, and denial
+recovery. This is exposed-family development work, not a replacement release score.
+
+The [completed 32-trial pilot](docs/evidence/utility-checklist-2026-09-27/README.md)
+improved clean success from 1/8 to 4/8 and attacked success from 2/8 to 3/8, but
+clean decision correctness stayed at 4/8 and the checklist had one unresolved
+timeout. It failed the predeclared selection rule and remains opt-in development work.
+
+```sh
+make utility-validate
+make utility-prepare             # Freeze 0/32; zero generation
+make utility-start EPISODES=4    # Bounded session, then pause
+make utility-start              # Resume remaining trials
+make utility-report             # Independently regrade and compare arms
+```
+
 ## Broader development benchmark
 
 The [fourteen-task live benchmark](docs/evidence/fourteen-task-live-2026-09-24/README.md)

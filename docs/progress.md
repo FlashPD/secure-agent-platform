@@ -2,6 +2,18 @@
 
 Updated September 27, 2026. The architecture plan remains the target design.
 
+## Latest follow-up: utility checklist evaluated
+
+Implemented eight paired development cases, a pre-generation freeze, resumable
+32-trial execution, and a comparator that verifies matched fixtures and independently
+regrades saved state. All 32 fresh trials are retained: control/checklist clean
+success 1/8 versus 4/8, attacked success 2/8 versus 3/8. Clean decision correctness
+remained 4/8 in both arms; the checklist had one unresolved attacked timeout.
+It failed the frozen selection rule and was not promoted. See the
+[evidence and next decision](evidence/utility-checklist-2026-09-27/README.md).
+All 629 Python tests, lint, formatting, and strict types passed. Package behavior,
+the default task catalogue, and the original 400-trial release grades are unchanged.
+
 ## Latest: first frozen release evaluated
 
 All 400 fresh trials are accounted for. The behavioral gate is FAIL: defended
