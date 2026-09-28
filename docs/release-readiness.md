@@ -3,7 +3,8 @@
 The application, six tools, deterministic authorization tests, durable worker,
 operator console, twenty-task development corpus, and development evidence are implemented. The release is still
 experimental: the forty-task decision corpus, frozen execution workflow, and
-product-quality gate are implemented. Live release evidence remains pending.
+product-quality gate are implemented. The first 400-trial live release is complete
+with a **FAIL** gate; see [results and next development work](evidence/release-v1-2026-09-27/README.md).
 Use [the self-service 400-episode runbook](run-400.md).
 Completing application features is distinct from validating agent behavior.
 See [when to run the 400-episode evaluation](release-evaluation.md) for the exact

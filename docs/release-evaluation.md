@@ -78,7 +78,9 @@ verified artifacts, the system card, and a clean-checkout reviewer walkthrough.
 ## Implemented execution path (September 26, 2026)
 
 The freeze, execution, release-specific gate, and forty-task decision corpus are
-implemented. **No 400-episode live release result is claimed**. Use the
+implemented. **Update September 27:** the first 400-episode live release is
+complete and failed utility/completion objectives; see the
+[retained results](evidence/release-v1-2026-09-27/README.md). Use the
 [self-service runbook](run-400.md); read [the corpus scope](held-out-corpus.md)
 for the decision-template holdout and shared-mechanism limitations.
 

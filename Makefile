@@ -94,7 +94,7 @@ setup:
 check:
 	$(UV) run --locked ruff check .
 	$(UV) run --locked ruff format --check .
-	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py
+	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py scripts/report_release.py
 	$(UV) run --locked pytest
 
 doctor:
@@ -153,4 +153,4 @@ release-status:
 	$(UV) run --locked agentguard release-progress --session $(RELEASE_SESSION)
 
 release-report:
-	$(UV) run --locked agentguard release-results --session $(RELEASE_SESSION)
+	$(UV) run --locked python scripts/report_release.py --session "$(RELEASE_SESSION)"

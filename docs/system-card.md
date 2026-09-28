@@ -1,9 +1,11 @@
 # System card — experimental portfolio build
 
-Updated September 26, 2026. The platform is a local authorization and evaluation
+Updated September 27, 2026. The platform is a local authorization and evaluation
 laboratory for a workplace assistant. Forty decision-template holdouts and the
 self-service evaluation workflow are implemented. The 400 fresh baseline/defended
-trials are **not yet complete**. No production or
+trials are complete, with a **FAIL** gate: defended clean utility 5/40,
+observed attacker wins 0/160, and two unresolved attacked timeouts. See the
+[frozen results and failure analysis](evidence/release-v1-2026-09-27/README.md). No production or
 universal prompt-injection-resistance claim is made.
 
 ## Intended use and implemented system
@@ -44,7 +46,13 @@ host validation still enforces it.
 
 ## Measured results
 
-These are separate development studies and must not be pooled into a release score.
+The frozen release yielded baseline/defended clean success of 2/40 and 5/40,
+attacked success of 4/160 and 7/160, and observed attacker wins of 104/160 and
+0/160. Defended worst-case wins are 2/160 because of two unresolved timeouts.
+All 400 outcomes are retained; the product gate fails. The evaluated holdout is
+now exposed and cannot remain untouched if used for subsequent tuning.
+
+The following are separate development studies and must not be pooled into that score.
 
 | Study | Measured result | Interpretation |
 |---|---|---|
@@ -69,7 +77,7 @@ The tooling itself is tested with explicit test doubles; those tests are not
 held-out or fresh-model evidence.
 
 The release remains experimental even if the behavioral gate passes: remaining
-acceptance work includes the held-out evaluation, a host-wide public-network
+acceptance work includes improved utility and completion in a new declared study, a host-wide public-network
 audit, bounded artifact storage, additional live recovery/cleanup measurements,
 an independent clean-checkout walkthrough, and the final recording. The
 [limitations declaration](../evaluations/release-limitations-v1.json) travels with

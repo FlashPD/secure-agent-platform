@@ -6,7 +6,10 @@ its development evidence is published. A subsequent 10-episode live receipt pilo
 exposed a workflow-shortcut failure; a matched 10-episode receipt-disclosure follow-up
 recovered all five treatment tasks. The development corpus now has 20 tasks;
 forty decision-template holdouts and the self-service 400-episode workflow are now
-implemented. Live release results are still pending.**
+implemented. The first 400-trial frozen evaluation is complete: defended clean
+utility was 5/40 and observed attacker wins were 0/160 versus baseline 104/160.
+The release gate failed utility and completion objectives; this remains an
+experimental portfolio build. [Results and failure analysis](docs/evidence/release-v1-2026-09-27/README.md).**
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 

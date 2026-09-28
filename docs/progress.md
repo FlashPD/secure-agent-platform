@@ -1,6 +1,19 @@
 # Implementation status
 
-Updated September 26, 2026. The architecture plan remains the target design.
+Updated September 27, 2026. The architecture plan remains the target design.
+
+## Latest: first frozen release evaluated
+
+All 400 fresh trials are accounted for. The behavioral gate is FAIL: defended
+clean success 5/40 against a required 32/40; noncompleted trials 2 versus baseline
+1; unresolved attacked trials 2 versus 0. Observed attacker wins fell from
+104/160 to 0/160, but low utility and the unresolved trials prevent a passing
+release claim. The [retained analysis](evidence/release-v1-2026-09-27/README.md)
+documents incorrect decisions, exact-format failures, omitted effects, and
+timeouts after repeated denials. The report now explains counts and failure
+reasons while retaining gate exit codes and the original frozen package source.
+Earlier sections are historical milestones; new behavior must be evaluated in
+a separately declared study after development validation.
 
 ## First increment: authorization kernel and scripted evidence
 
