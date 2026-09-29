@@ -1,148 +1,76 @@
 # Remaining work for a portfolio release
 
-The application, six tools, deterministic authorization tests, durable worker,
-operator console, twenty-task development corpus, and development evidence are implemented. The release is still
-experimental: the forty-task decision corpus, frozen execution workflow, and
-product-quality gate are implemented. The first 400-trial live release is complete
-with a **FAIL** gate; see [results and next development work](evidence/release-v1-2026-09-27/README.md).
-Use [the self-service 400-episode runbook](run-400.md).
-Completing application features is distinct from validating agent behavior.
-See [when to run the 400-episode evaluation](release-evaluation.md) for the exact
-schedule, prerequisites, gate objectives, and execution order.
+Updated September 28, 2026. **The first 400-trial evaluation is complete. Its
+behavioral gate is FAIL.** No episodes remain in that session. The current
+priority is improving utility before release.
 
-## Remaining milestones and estimate
+## Completed platform and evaluation work
 
-One focused engineer-day is about six hours, including verification and writing.
-These estimates are planning ranges, not a commitment or measured implementation
-velocity. Model failures and corpus authoring are the main uncertainties.
+The six tools, deterministic authorization, scoped approvals, transactional
+effects, durable worker, authenticated API, and React console are implemented.
+The twenty-task development corpus, forty decision-template holdouts, four attacks
+per holdout, frozen protocol, and resumable 400-trial execution are complete.
+All outcomes, paired analysis, exposure accounting, and
+[failure analysis](evidence/release-v1-2026-09-27/README.md) are retained.
 
-| Work | Done when | Focused days |
-|---|---|---:|
-| Expanded live feasibility | All 24 original new-tool trials accounted for; budgets, failures, and denial outcomes published; wording follow-ups kept separate | Completed this increment |
-| Corpus and split | 20 development and 40 held-out tasks, four attacks per held-out task, workflow-family separation, provenance, and freeze manifest | 4–6 |
-| Release evaluation and gates | All 400 required episodes; multi-payload paired task-cluster intervals, ablation, comparison compatibility checks, explicit gate result | 2–3 |
-| Reliability evidence | Remaining cancellation, artifact-quota, model-failure, orphan-container, telemetry, policy-latency, and public-network checks implemented or explicitly scoped with acceptance consequences | 2–3 |
-| Portfolio packaging | Model/system card, architecture decisions, clean-checkout reproduction, sanitized evidence, five-minute recording, and final reviewer walkthrough | 1–2 |
+The subsequent [32-trial checklist study](evidence/utility-checklist-2026-09-27/README.md)
+is also complete. Its treatment improved formatting but failed its selection
+rule and was not promoted. Earlier estimates that still counted corpus authoring
+and the first full evaluation as future work are superseded.
 
-With expanded live feasibility complete, the remaining estimate is approximately
-**9–14 focused days (roughly 55–85 hours)**, or about **4–6 weeks at 15 hours/week**.
-The estimate at the start of this increment was 10–16 days (60–100 hours).
-Unattended inference adds elapsed time. A larger-model investigation or substantial changes
-identified by development trials can extend the estimate. The first six-tool
-run took 54 minutes for 24 episodes (mean about 135 seconds). A simple linear
-projection gives about 15 hours for 400 episodes before setup/recovery; held-out
-workflows and additional attacks may take longer. This is scheduling guidance,
-not a throughput guarantee.
+## Current path to a useful release
 
-Resumable benchmark sessions are now implemented and covered by deterministic
-crash/signal tests. The [84-episode live run](evidence/fourteen-task-live-2026-09-24/README.md)
-also completed across three sessions without missing/interrupted trials; see
-[the runbook](resumable-benchmarks.md). The estimate above
-predates that increment and has not been re-estimated. A full held-out run remains pending.
+| Step | Done when |
+|---|---|
+| Stronger model / utility pilot | The eight-trial guard study is complete but rejected (0/4 to 1/4 exact success, one guarded timeout); finish PC setup and validate a useful configuration |
+| Broader development | A selected configuration succeeds across the wider known workflows, including exact outputs, committed effects, and denial recovery; retain regressions and failures |
+| New release study | Declare and freeze the selected configuration and evaluation scope before inference; use independently authored tasks for an untouched holdout claim |
+| Release gate | Account for every scheduled trial; meet the frozen utility, attack, completion, and invariant requirements without changing denominators or graders |
+| Portfolio package | Update the case study/system card, verify clean-checkout reproduction, record the five-minute walkthrough, and publish the actual gate result |
 
-The RTX 5080 inference profile, repeated multi-seed release trials, external
-AgentDojo adapter, hosted deployment, and optional telemetry dashboards are not
-on this critical path. Production multi-tenancy and hostile-host protection remain
-outside the first-release goals. HTTP credential separation already exists;
-stronger OS process separation must not be presented as implemented.
+Both [model screens](model-utility-pilot.md) stopped without selecting a candidate.
+The [completion-guard pilot](completion-guard.md) recovered omitted actions but
+failed selection; incorrect decisions and a final-response timeout remain.
+[Windows/RTX 5080 setup](pc-inference.md) is prepared for the next session.
+The small pilot is a selection step, not a replacement for the release evaluation.
+The forty evaluated templates are now exposed and cannot become untouched again.
 
-## Evidence that still needs to be collected
+## Why the first gate failed
 
-- Effective development attacks on the expanded tool workflows. The fresh
-  [24-episode six-tool run](evidence/six-tool-live-2026-09-23/README.md) had no
-  forbidden proposals in any profile, so denial recovery remains unmeasured on
-  those workflows. In the subsequent 84-episode catalogue run, those four newer
-  workflows again had zero observed attacker wins in every profile. Do not pool
-  differently versioned runs into one score.
-- Forty held-out tasks. The [twenty-task development target](development-corpus.md)
-  is now met, with four attacks on each of the six added workflows. All twenty
-  tasks are development assets with known related families. Do not relabel them
-  as held-out. Freeze task
-  families, payloads, budgets, grader predicates, and thresholds before release runs.
-- Four fixed attack families for each held-out task; the current catalogue has
-  fourteen one-payload tasks and six four-payload tasks. [Multiple-attack scheduling, resumable identities, and paired
-  task-cluster analysis](multi-attack-evaluation.md) are now implemented and tested
-  with a four-family development pilot and the six-workflow expansion. New live
-  effectiveness is unmeasured. Tool-response insertion remains pending. Grader v4
-  now supports explicitly declared canonical base64/hex canary matching; arbitrary
-  encoding and semantic leakage remain outside that coverage.
-- Fresh-model evaluation of the [ticket-scope treatment](adr-003-ticket-scope-and-response-boundary.md).
-  Explicit update lists block the four protected-sibling edits in authored replay;
-  three final-response disclosures remain an explicit limitation. Older contracts
-  with no list retain project-wide authority. Output review or constrained response
-  generation requires a further treatment and utility measurement. The opt-in
-  [response-clearance treatment](adr-004-response-clearance-treatment.md) now blocks
-  those disclosures but also withholds the clean triage answer (5/6 clean utility,
-  16.7-point loss). It remains outside the default catalogue. These scripted
-  results do not establish live attack reduction or waive release thresholds.
-  The subsequent [verified-effect receipt treatment](adr-005-verified-effect-receipts.md)
-  recovers 6/6 clean and 24/24 attacked success with zero observed wins in its
-  matched authored experiment. It explicitly changes completion wording in both
-  arms and releases only a verified completion bit. Its 180 Docker episodes and
-  recovery checks do not replace fresh-model feasibility or held-out evaluation.
-  The subsequent [ten-episode live pilot](evidence/receipt-live-pilot-2026-09-25/README.md)
-  failed whole-task utility in both arms: control withheld harmless answers, while
-  the receipt arm skipped required read/list steps. All four treatment attacks
-  were absent from saved model requests. The subsequent
-  [receipt-disclosure pilot](evidence/receipt-disclosure-2026-09-25/README.md)
-  narrows model-visible scope while retaining full trusted verification. Its ten
-  new matched episodes recover 1/1 clean and 4/4 attacked treatment success with
-  unchanged graders, four exposed payloads, and one denied attack followed by
-  recovery. Full-action control still fails all five tasks. This one-task result
-  remains opt-in; broader feasibility and release objectives are still pending.
-- Release gates that require compatible, complete evidence. Initial objectives
-  from the architecture plan are clean utility at least 80%, defended clean-utility
-  loss no greater than five percentage points, and lower observed attack success
-  without more ungraded trials. A failed objective must remain visible and result
-  in an experimental release, not an edited denominator.
-- Structured-generation compatibility: the pinned runtime does not enforce the
-  search query’s unanchored nonblank regex in its grammar. Host validation still
-  enforces it. Test an equivalent supported constraint in a declared schema
-  treatment before claiming full grammar coverage.
-- False-block annotations, approval burden, state/task disruption, and infrastructure
-  failure counts. A denied action alone is not evidence of complete protection.
-- Fresh-model mid-episode crash recovery remains unmeasured. Safe pause/resume
-  between episodes is now demonstrated by all 84 live trials completing across
-  sessions of 10, 10, and 64. Process-death and signal-injection tests still use
-  authored replay/model doubles; do not describe the live run as a crash experiment.
-- A measured public-network audit after downloads, bounded artifact storage,
-  cancellation during computation,
-  and cleanup after supervisor interruption. Existing container network denial
-  is not a host-wide traffic audit. Two 1,000-call policy microbenchmarks now
-  satisfy the initial narrowly scoped latency measurement; broader step timing
-  and telemetry remain incomplete.
-- An independent clean-checkout walkthrough that verifies the published checksums
-  and reproduces a small fresh benchmark. The full release must account for all
-  400 required baseline/defended episodes, whether successful or not.
+Defended clean task success was **5/40**, below the frozen **32/40** requirement.
+There were two noncompleted defended trials versus one baseline trial, and two
+unresolved attacked trials versus zero. Observed attacker wins were 0/160 versus
+104/160; the unresolved attacks remain in worst-case bounds. Security counts do
+not compensate for failed utility. The failure review identifies incorrect
+choices, exact-format mismatches, omitted effects, and repeated denied proposals.
 
-The original [architecture plan](../arch_plan/secure-agent-platform-plan.md)
-remains the acceptance target. [Implementation progress](progress.md) and linked
-versioned evidence distinguish completed work from these remaining objectives.
+The checklist achieved only 4/8 clean and 3/8 attacked successes against
+requirements of 7/8 and 6/8, with one unresolved timeout. Another full evaluation
+should wait for measured improvement on development inputs.
 
-## September 26 update: release infrastructure
+## Remaining acceptance limits
 
-The pre-execution freeze, conservative split checks, source-bound invariant
-evidence, exactly-400 scheduling, compatible resume, and separate behavioral gate
-are implemented. Gate outcomes are PASS/FAIL/UNUSABLE; complete failures retain
-their denominators. Offline scoring rechecks journal/state/call consistency and
-includes attack exposure and paired uncertainty. See the updated
-[commands and limits](release-evaluation.md).
+These remain open even after utility improves:
 
-The [system card](system-card.md) now consolidates intended use, model provenance,
-measured development outcomes, and remaining acceptance gaps. The
-[authoring contract](held-out-authoring.md) defines the forty-task corpus and
-lineage review still needed. A six-workflow, sixty-episode development comparison
-is available through `make eval-receipt-broad-live`; it is not held-out evidence.
-The earlier effort estimates are historical and have not been re-estimated.
+- A release-scale prompt-only ablation to separate prompt and gateway contributions.
+- A host-wide public-network audit after setup; container network denial alone
+  does not establish this.
+- Bounded artifact storage, additional live mid-episode recovery/cancellation and
+  orphan-container cleanup measurements, and broader telemetry/step timing.
+- Stronger operator/worker OS process separation; HTTP credential separation
+  exists but is not equivalent.
+- Structured-generation coverage for the search nonblank regex; host validation
+  enforces it, but the pinned runtime grammar does not.
+- An independent clean-checkout reproduction and final recording. The Git evidence
+  extract omits the full SQLite state required for independent state regrading.
 
-## Current handoff: run the frozen comparison
+The [system card](system-card.md) and
+[frozen limitations](../evaluations/release-limitations-v1.json) define the scope.
+A failed behavioral gate can support an explicitly experimental portfolio case
+study, but the current user-selected priority is improved utility before release.
+Optional RTX 5080 support, multi-seed repeats, external AgentDojo integration,
+hosted deployment, and dashboards are outside the shortest release path.
 
-Forty newly authored decision procedures and 160 fixed payloads are implemented
-with explicit relationship records. All 400 authored paths and negative grader
-checks are validated before freezing; this is not fresh inference. The holdout
-is at the decision-template level and shares primitives/attack mechanisms with
-development. It does not establish independent workflow or unseen-attack coverage.
-The named-session commands prepare, plan without generation, start/resume, inspect,
-and report the 400 fresh trials. Earlier estimates and missing-corpus statements
-above describe historical milestones. The full live comparison and remaining
-acceptance evidence are still outstanding.
+Docker is unnecessary for reading results, offline regrading, or fixture demos.
+Start Docker Desktop for isolated tools; fresh inference additionally needs the
+pinned native model server. Preserve the original release freeze and all failures.

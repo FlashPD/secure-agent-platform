@@ -70,3 +70,19 @@ were offloaded to Metal. Tests/analysis overlapped parts of inference, so neithe
 the timing nor the difference from earlier sessions is a controlled comparison.
 The server was stopped afterward, port 8101 had no listener, and no `agentguard-`
 containers remained. Whole-machine memory and public-network traffic were not measured.
+
+## September 28 utility candidates
+
+Both additional pinned model profiles ran on this M1 Mac. The updated 4B
+candidate used approximately 2.5 GB of weights; Qwen3.5-9B Q4_K_M used
+5,680,522,464 bytes. The 9B runtime reported 33/33 layers offloaded to Metal,
+a 5406.91 MiB Metal-mapped model buffer, 545.62 MiB CPU-mapped model buffer,
+and 256 MiB Metal KV buffer. These are runtime allocation observations, not
+whole-machine peak memory measurements or independent quantities to sum.
+
+The [9B screen](evidence/model-medium-2026-09-28/README.md) stopped for utility
+futility at 14/32 under its predeclared rule. Fitting the model in memory did not
+establish useful task completion. The [completion-guard comparison](completion-guard.md)
+uses the same model and budgets. Prompt caching remains explicitly disabled in
+both arms; calls reprocess the full prompt. Reported timings reflect uncontrolled
+host load and should not be treated as controlled performance benchmarks.

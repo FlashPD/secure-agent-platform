@@ -94,7 +94,7 @@ setup:
 check:
 	$(UV) run --locked ruff check .
 	$(UV) run --locked ruff format --check .
-	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py scripts/report_release.py scripts/utility_pilot.py
+	$(UV) run --locked mypy src scripts/compare_receipt_pilot.py scripts/report_release.py scripts/utility_pilot.py scripts/model_pilot.py scripts/screen_model_pilot.py scripts/completion_pilot.py
 	$(UV) run --locked pytest
 
 doctor:
@@ -172,3 +172,25 @@ utility-status:
 
 utility-report:
 	$(UV) run --locked python scripts/utility_pilot.py report --session "$(UTILITY_SESSION)"
+
+.PHONY: model-pilot-prepare model-pilot-start model-pilot-status model-pilot-report
+MODEL_PILOT_SESSION ?= artifacts/utility-model-instruct-v1
+MODEL_PILOT_PROFILE ?= mac-instruct
+model-pilot-prepare:
+	$(UV) run --locked python scripts/model_pilot.py prepare --session "$(MODEL_PILOT_SESSION)" --model-profile config/model-$(MODEL_PILOT_PROFILE).json
+
+model-pilot-start:
+	$(UV) run --locked python scripts/model_pilot.py run --session "$(MODEL_PILOT_SESSION)" $(if $(EPISODES),--max-episodes $(EPISODES),)
+
+model-pilot-status:
+	$(UV) run --locked python scripts/model_pilot.py status --session "$(MODEL_PILOT_SESSION)"
+
+model-pilot-report:
+	$(UV) run --locked python scripts/model_pilot.py report --session "$(MODEL_PILOT_SESSION)"
+
+.PHONY: model-screen-declare model-screen-start
+model-screen-declare:
+	$(UV) run --locked python scripts/screen_model_pilot.py declare --session "$(MODEL_PILOT_SESSION)"
+
+model-screen-start:
+	$(UV) run --locked python scripts/screen_model_pilot.py run --session "$(MODEL_PILOT_SESSION)"

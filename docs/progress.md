@@ -1,6 +1,26 @@
 # Implementation status
 
-Updated September 27, 2026. The architecture plan remains the target design.
+Updated September 28, 2026. The architecture plan remains the target design.
+
+## Current work: completion obligations before release
+
+The first 400-trial evaluation and 32-trial checklist study are complete and
+failed their selection objectives. The updated 4B model stopped after 19/32
+trials with zero exact successes (post-hoc stop); the 9B screen stopped after
+14/32 under a predeclared futility rule. Both partial studies retain recorded
+and unrun counts in [the model runbook](model-utility-pilot.md).
+
+An opt-in trusted completion guard now prevents a final response while required
+tool kinds have not succeeded. It does not grant permission, supply correct
+answers, or change task graders. The [eight-trial matched live pilot](completion-guard.md)
+is complete and independently regraded: exact success 0/4 control versus 1/4 guard; ticket creation
+1/4 versus 4/4. Incorrect boundary decisions and one guarded final-response timeout
+prevent selection. All 664 Python tests passed across the full suite and focused
+additions; lint, formatting, and types passed. The local model server is stopped.
+Historical sources were preserved for regrading. [Windows/RTX 5080 setup](pc-inference.md)
+is prepared and deferred until the next session; no PC connection was made.
+The sections below retain implementation history; their forward-looking
+milestones are not the current backlog.
 
 ## Latest follow-up: utility checklist evaluated
 
@@ -461,7 +481,7 @@ mechanisms are shared with development; independent workflow generalization is
 not established. The forty-task corpus has received no model generation during
 authoring or planning. Follow [Run the 400-episode evaluation](run-400.md).
 
-## Next increment: execute and publish the frozen comparison
+## Historical handoff before the first live release
 
 Run the prepared baseline/defended schedule, preserve all 400 outcomes, and publish
 the gate, paired uncertainty, exposure, and failure review. The separate prompt-only

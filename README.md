@@ -1,27 +1,26 @@
 # Secure Agent Execution & Evaluation Platform
 
-**Status: all six tools, durable execution, the authenticated API, and the operator
-console are implemented. An 84-episode live benchmark completed across three sessions;
-its development evidence is published. A subsequent 10-episode live receipt pilot
-exposed a workflow-shortcut failure; a matched 10-episode receipt-disclosure follow-up
-recovered all five treatment tasks. The development corpus now has 20 tasks;
-forty decision-template holdouts and the self-service 400-episode workflow are now
-implemented. The first 400-trial frozen evaluation is complete: defended clean
-utility was 5/40 and observed attacker wins were 0/160 versus baseline 104/160.
-The release gate failed utility and completion objectives; this remains an
-experimental portfolio build. [Results and failure analysis](docs/evidence/release-v1-2026-09-27/README.md).**
+**Implemented:** six tools, durable execution, authenticated API, operator console,
+and a frozen, resumable evaluation harness.
+
+**Measured:** the first 400-trial evaluation is complete. Defended clean task
+success was **5/40**; observed attacker wins were **0/160**, versus baseline
+**104/160**, with two defended attacks unresolved. The release gate is **FAIL**.
+Current work targets utility before portfolio release.
+[Results and failure analysis](docs/evidence/release-v1-2026-09-27/README.md).
 
 A local workplace-agent lab that measures legitimate task completion and resistance to prompt injection, with application-enforced permissions, reviewable actions, and reproducible security evaluations.
 
+[Engineering case study](docs/portfolio-case-study.md) ·
 [Architecture and implementation plan](arch_plan/secure-agent-platform-plan.md) ·
 [System card and measured limits](docs/system-card.md) ·
 [Run the 400-episode evaluation](docs/run-400.md)
 
 Development, state, and the demo run on the Mac. Model inference can run on the Mac or on an optional RTX 5080 PC over an SSH tunnel. No paid cloud service or model API is required.
 
-The first runnable slice reads a synthetic launch document and creates a ticket.
-An authored attack script redirects the ticket to an unauthorized project.
-The deterministic gateway blocks that write and permits the intended one.
+A representative workflow reads a synthetic launch document and creates a ticket.
+An embedded instruction tries to redirect the write to an unauthorized project;
+the gateway checks the actual action against trusted permissions before committing it.
 
 ## Run the 400-episode release comparison
 
@@ -41,6 +40,29 @@ make release-report              # Gate, offline viewer, and diagnostics
 Start Docker and the pinned local model server first (`make model-serve` in a
 separate terminal). `make release-status` works without inference. All failed
 trials remain in the frozen comparison; this release is explicitly experimental.
+
+## Current work: improve utility before release
+
+The 400-trial evaluation is already complete and its gate remains **FAIL**.
+The [model screens](docs/model-utility-pilot.md) rejected the updated 4B candidate
+at 19/32 and the 9B candidate at its predeclared 14/32 futility stop.
+The latest [completion-guard pilot](docs/completion-guard.md) targets omitted
+requested actions using explicit trusted task obligations. It keeps the same
+9B model, exact graders, and budgets. The [completed eight-trial comparison](docs/evidence/completion-guard-2026-09-28/README.md)
+recorded exact success of 0/4 control versus 1/4 guard and ticket creation of
+1/4 versus 4/4. Incorrect decisions and one guarded timeout prevented selection.
+[Windows/RTX 5080 setup](docs/pc-inference.md) is prepared for the next session.
+
+```sh
+uv run --locked python scripts/completion_pilot.py status
+uv run --locked python scripts/completion_pilot.py report
+```
+
+Docker and the `mac-medium` model server must be running for inference. See the
+runbook for first-time preparation. Existing tasks remain unchanged unless the
+guard is explicitly enabled. Historical reports require their frozen source;
+[regrading instructions](docs/completion-guard.md#historical-evidence) preserve
+the original 400-trial result. Another full release run waits for measured utility.
 
 ## Utility improvement pilot
 
@@ -235,7 +257,7 @@ The [400-episode release runbook](docs/release-evaluation.md) explains when to s
 the main evaluation: after development decisions, forty untouched held-out tasks,
 lineage review, a frozen experiment, and a release-specific gate. The freeze,
 resumable 400-episode runner, and PASS/FAIL/UNUSABLE gate are implemented; the
-forty new decision templates are authored and validated; live release results remain pending.
+forty new decision templates are authored and validated; the first 400 live outcomes are published with a FAIL gate.
 
 Benchmarks can run directly from your terminal across multiple sessions. Add
 `--max-episodes 10` to `agentguard eval-suite` to pause after ten episodes, or press
@@ -363,7 +385,7 @@ concurrent retries, cancellation, and rollback on precommit failure.
 - [Why a bounded native loop precedes durable execution](docs/adr-002-local-model-loop.md)
 - [Dependency license inventory](docs/dependency-licenses.json)
 
-Next: execute the prepared 400-episode release comparison with the
-[user runbook](docs/run-400.md), then publish every outcome and the gate result.
+Next: complete the [model utility follow-up](docs/model-utility-pilot.md) before
+selecting a configuration for broader development and a new release evaluation.
 The broader development pilot is paused separately; no completed comparison is
 claimed for it. Remaining acceptance gaps are listed in the system card.

@@ -2,9 +2,16 @@
 
 import hashlib
 import json
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    TypeAdapter,
+    model_serializer,
+)
 
 Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")]
 Profile = Literal["baseline", "prompt_only", "defended"]
@@ -141,6 +148,15 @@ class TaskContract(Contract):
     # This narrows write authority only, independently of inventory read access.
     update_ticket_ids: tuple[Identifier, ...] | None = Field(default=None, max_length=100)
     response_scope: ResponseScope | None = None  # Legacy tasks retain unrestricted output.
+    # Trusted task intent, never additional authority or a statement of correctness.
+    completion_tools: tuple[Tool, ...] | None = Field(default=None, max_length=6)
+
+    @model_serializer(mode="wrap")
+    def serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        value: dict[str, Any] = handler(self)
+        if self.completion_tools is None:
+            value.pop("completion_tools", None)
+        return value
 
 
 class Decision(Contract):

@@ -105,6 +105,7 @@ def model_scope(contract: TaskContract) -> dict[str, Any]:
     selector is host configuration, not a model instruction or permission grant.
     """
     scope = contract.model_dump(mode="json")
+    scope.pop("completion_tools", None)
     response = scope.get("response_scope")
     if response and response.get("effect_receipt"):
         receipt = response["effect_receipt"]
@@ -226,6 +227,17 @@ class Runtime:
         trace: list[dict[str, Any]] = []
         final = ""
 
+        def missing_tools(db: sqlite3.Connection) -> list[str]:
+            current = TaskContract.model_validate_json(
+                db.execute("SELECT contract FROM episodes WHERE id=?", (episode,)).fetchone()[0]
+            )
+            succeeded = {
+                entry["action"]["tool"]
+                for entry in trace
+                if entry["execution"]["decision"]["outcome"] == "ALLOW"
+            }
+            return sorted(set(current.completion_tools or ()) - succeeded)
+
         def finish(status: str, reason: str) -> dict[str, Any]:
             # Rebuild accounting even when a reclaimed job has already timed out.
             # Missing/invalid envelopes reserve the whole allowance; usage is unknown.
@@ -264,6 +276,11 @@ class Runtime:
                 "trace": trace,
             }
             with checkpoint() as db:
+                if status == "COMPLETED" and missing_tools(db):
+                    status = "FAILED"
+                    result.update(
+                        status=status, reason="REQUIRED_ACTIONS_MISSING", final_response=""
+                    )
                 if status == "COMPLETED":
                     # Authorize using CURRENT scope/taint in the same fenced transaction
                     # that commits the visible result. Raw model evidence stays separate.
@@ -416,6 +433,25 @@ class Runtime:
                     )
                     continue
                 if isinstance(turn, FinalTurn):
+                    with checkpoint() as db:
+                        missing = missing_tools(db)
+                    if missing:
+                        feedback = canonical_json(
+                            {
+                                "outcome": "TASK_INCOMPLETE",
+                                "reason": "REQUIRED_ACTIONS_MISSING",
+                                "required_tools": missing,
+                                "instruction": (
+                                    "A final message performs no actions. Complete the original "
+                                    "task using authorized tools. "
+                                    "Do not repeat already completed work."
+                                ),
+                            }
+                        )
+                        if len(feedback.encode()) > self.budgets.max_tool_result_bytes:
+                            return finish("BUDGET_EXHAUSTED", "TOOL_RESULT_LIMIT")
+                        messages.append({"role": "user", "content": feedback})
+                        continue
                     final = turn.text
                     return finish("COMPLETED", "FINAL_RESPONSE")
                 grant_id = None

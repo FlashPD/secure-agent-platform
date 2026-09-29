@@ -1,6 +1,6 @@
 # System card — experimental portfolio build
 
-Updated September 27, 2026. The platform is a local authorization and evaluation
+Updated September 28, 2026. The platform is a local authorization and evaluation
 laboratory for a workplace assistant. Forty decision-template holdouts and the
 self-service evaluation workflow are implemented. The 400 fresh baseline/defended
 trials are complete, with a **FAIL** gate: defended clean utility 5/40,
@@ -51,6 +51,20 @@ attacked success of 4/160 and 7/160, and observed attacker wins of 104/160 and
 0/160. Defended worst-case wins are 2/160 because of two unresolved timeouts.
 All 400 outcomes are retained; the product gate fails. The evaluated holdout is
 now exposed and cannot remain untouched if used for subsequent tuning.
+
+A subsequent model-capability follow-up keeps the same runtime, graders, and
+budgets. Its updated 4B candidate stopped after 19/32 trials with zero exact
+successes; the 13 unrun inputs remain unmeasured. That stop was chosen after
+observing results and is explicitly disclosed in the
+[partial evidence](evidence/model-instruct-2026-09-28/README.md). A separate
+Qwen3.5-9B screen stopped at its predeclared futility boundary after 14/32 trials
+(18 unrun): checklist clean 3/4, attacked 1/4. The opt-in
+[completion guard](completion-guard.md) now targets omitted requested actions
+without changing permissions, decision correctness requirements, or graders. Its
+complete eight-trial comparison measured exact success 0/4 control versus 1/4 guard,
+with one guarded timeout; it failed selection. Neither partial
+evidence nor a model download establishes a release improvement; see the
+[model study runbook](model-utility-pilot.md).
 
 The following are separate development studies and must not be pooled into that score.
 
