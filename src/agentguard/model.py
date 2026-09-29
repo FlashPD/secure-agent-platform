@@ -21,7 +21,9 @@ class ModelFailure(Exception):
 
 def inference_environment() -> dict[str, str]:
     """Do not pass business credentials or implicit provider/runtime overrides to inference."""
-    allowed = ("PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE", "TZ")
+    allowed: tuple[str, ...] = ("PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE", "TZ")
+    if os.name == "nt":
+        allowed += ("SystemRoot", "WINDIR", "TEMP", "TMP")
     return {key: os.environ[key] for key in allowed if key in os.environ} | {
         "PYTHONIOENCODING": "utf-8"
     }

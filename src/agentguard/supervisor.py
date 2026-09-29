@@ -5,6 +5,7 @@ import os
 import re
 import selectors
 import subprocess
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -20,6 +21,83 @@ MAX_STDERR = 4096
 IMAGE_PATTERN = re.compile(r"sha256:[0-9a-f]{64}\Z")
 
 
+def _bounded_process_windows(
+    command: list[str],
+    payload: bytes,
+    *,
+    timeout: float,
+    output_limit: int,
+    env: dict[str, str] | None,
+) -> bytes:
+    """Windows select() cannot watch pipes, so drain them with bounded reader threads."""
+    try:
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        raise ToolFailure("RUNTIME_UNAVAILABLE") from exc
+    assert process.stdin and process.stdout and process.stderr
+    stdin = process.stdin
+    stdout, stderr = bytearray(), bytearray()
+    exceeded = threading.Event()
+
+    def read_pipe(stream: Any, buffer: bytearray, limit: int) -> None:
+        try:
+            while chunk := os.read(stream.fileno(), 4096):
+                if len(buffer) + len(chunk) > limit:
+                    exceeded.set()
+                    if process.poll() is None:
+                        process.kill()
+                    return
+                buffer.extend(chunk)
+        except OSError:
+            pass
+
+    def write_input() -> None:
+        try:
+            stdin.write(payload)
+            stdin.close()
+        except (OSError, ValueError):
+            pass
+
+    readers = [
+        threading.Thread(
+            target=read_pipe, args=(process.stdout, stdout, output_limit), daemon=True
+        ),
+        threading.Thread(target=read_pipe, args=(process.stderr, stderr, MAX_STDERR), daemon=True),
+    ]
+    writer = threading.Thread(target=write_input, daemon=True)
+    try:
+        for reader in readers:
+            reader.start()
+        writer.start()
+        try:
+            status = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            raise ToolFailure("TOOL_TIMEOUT") from exc
+        for reader in readers:
+            reader.join(timeout=1)
+        writer.join(timeout=1)
+        if any(reader.is_alive() for reader in readers) or writer.is_alive():
+            raise ToolFailure("TOOL_TIMEOUT")
+        if exceeded.is_set():
+            raise ToolFailure("OUTPUT_TOO_LARGE")
+        if status != 0:
+            raise ToolFailure("TOOL_PROCESS_FAILED", exit_status=status)
+        return bytes(stdout)
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+        for stream in (process.stdin, process.stdout, process.stderr):
+            stream.close()
+
+
 def bounded_process(
     command: list[str],
     payload: bytes,
@@ -31,6 +109,10 @@ def bounded_process(
     """Bound input writes as well as output reads; never buffer unbounded child output."""
     if len(payload) > MAX_INPUT:
         raise ToolFailure("INPUT_TOO_LARGE")
+    if os.name == "nt":
+        return _bounded_process_windows(
+            command, payload, timeout=timeout, output_limit=output_limit, env=env
+        )
     deadline = time.monotonic() + timeout
     try:
         process = subprocess.Popen(

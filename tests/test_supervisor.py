@@ -40,7 +40,7 @@ def test_input_pipe_timeout_when_child_never_reads():
         )
 
 
-@pytest.mark.parametrize("payload", [b"{}", b"x" * 120000])
+@pytest.mark.parametrize("payload", [b"{}", b"x" * 120000], ids=["small", "large"])
 def test_bounded_process_handles_full_duplex(payload):
     output = bounded_process(
         [sys.executable, "-c", "import sys; data=sys.stdin.buffer.read(); print(len(data))"],

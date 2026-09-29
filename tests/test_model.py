@@ -111,6 +111,7 @@ def test_inference_children_do_not_inherit_credentials_or_runtime_overrides(monk
         (200, b"x" * 65537, {"error": "MODEL_RESPONSE_TOO_LARGE"}),
         (200, b"\xff", {"error": "INVALID_MODEL_RESPONSE"}),
     ],
+    ids=["ok", "redirect", "server-error", "oversized", "invalid-utf8"],
 )
 def test_transport_bounds_response_and_never_follows_redirects(
     monkeypatch, capsys, status, body, expected
