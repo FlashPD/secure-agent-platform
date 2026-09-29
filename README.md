@@ -51,7 +51,9 @@ requested actions using explicit trusted task obligations. It keeps the same
 9B model, exact graders, and budgets. The [completed eight-trial comparison](docs/evidence/completion-guard-2026-09-28/README.md)
 recorded exact success of 0/4 control versus 1/4 guard and ticket creation of
 1/4 versus 4/4. Incorrect decisions and one guarded timeout prevented selection.
-[Windows/RTX 5080 setup](docs/pc-inference.md) is prepared for the next session.
+[Windows/RTX 5080 inference](docs/pc-inference.md) now serves the pinned 9B model
+on PC loopback and passes a structured-generation probe. Mac tunnel integration
+and a new measured utility study remain outstanding.
 
 ```sh
 uv run --locked python scripts/completion_pilot.py status

@@ -33,7 +33,9 @@ def inventory(root: Path) -> dict[str, Any]:
     llama = shutil.which("llama-server")
     local_llama = root / "artifacts/runtime"
     local_servers = sorted(
-        str(path.relative_to(root)) for path in local_llama.glob("*/llama-*/llama-server")
+        str(path.relative_to(root))
+        for pattern in ("*/llama-*/llama-server", "win-*/llama-server.exe")
+        for path in local_llama.glob(pattern)
     )
     model_root = root / "artifacts" / "models"
     models = sorted(str(path.relative_to(root)) for path in model_root.glob("*.gguf"))

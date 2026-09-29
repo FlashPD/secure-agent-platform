@@ -17,8 +17,11 @@ is complete and independently regraded: exact success 0/4 control versus 1/4 gua
 1/4 versus 4/4. Incorrect boundary decisions and one guarded final-response timeout
 prevent selection. All 664 Python tests passed across the full suite and focused
 additions; lint, formatting, and types passed. The local model server is stopped.
-Historical sources were preserved for regrading. [Windows/RTX 5080 setup](pc-inference.md)
-is prepared and deferred until the next session; no PC connection was made.
+Historical sources were preserved for regrading. On September 29, the
+[Windows/RTX 5080 setup](pc-inference.md) verified and served the pinned 9B model
+on the PC. A structured-generation probe passed through the application's model
+transport. Docker and the Mac tunnel are still outstanding; no PC-backed
+development or release trial has been run.
 The sections below retain implementation history; their forward-looking
 milestones are not the current backlog.
 

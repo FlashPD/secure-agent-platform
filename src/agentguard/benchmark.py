@@ -1,9 +1,10 @@
 """Single-host benchmark journal and exclusive ownership, separate from the app queue."""
 
-import fcntl
 import hashlib
+import importlib
 import importlib.metadata
 import json
+import os
 import platform
 import signal
 import sqlite3
@@ -21,6 +22,11 @@ from agentguard.model import ModelFailure, parse_reply
 from agentguard.runtime import TURN_ADAPTER, ActionTurn, Budgets, FinalTurn
 from agentguard.scenarios import DevelopmentTask
 from agentguard.storage import Store
+
+if os.name == "nt":
+    import msvcrt
+else:
+    fcntl: Any = importlib.import_module("fcntl")
 
 
 @contextmanager
@@ -55,16 +61,24 @@ def graceful_stop(notify: Callable[[str], None]) -> Iterator[Callable[[], bool]]
 
 @contextmanager
 def exclusive_run(directory: Path) -> Iterator[None]:
-    """The kernel releases flock on process death. Never unlink a live lock file."""
-    with (directory / ".benchmark.lock").open("a") as lock:
+    """The OS releases the lock on process death. Never unlink a live lock file."""
+    with (directory / ".benchmark.lock").open("a+b") as lock:
+        lock.seek(0)
         try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
+            if os.name == "nt":
+                msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
             raise ValueError("Benchmark is already running in another process") from exc
         try:
             yield
         finally:
-            fcntl.flock(lock, fcntl.LOCK_UN)
+            lock.seek(0)
+            if os.name == "nt":
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def environment() -> dict[str, Any]:

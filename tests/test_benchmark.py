@@ -24,6 +24,21 @@ from agentguard.suite import resume_suite, run_suite
 SUITE = Path("scenarios/dev/tools-v2.json")
 
 
+def test_exclusive_run_rejects_other_process_and_releases_lock(tmp_path):
+    child = (
+        "import sys; from pathlib import Path; "
+        "from agentguard.benchmark import exclusive_run; "
+        "\ntry:\n with exclusive_run(Path(sys.argv[1])): print('acquired')"
+        "\nexcept ValueError: print('busy')"
+    )
+    command = [sys.executable, "-c", child, str(tmp_path)]
+    with benchmark.exclusive_run(tmp_path):
+        blocked = subprocess.run(command, capture_output=True, text=True, timeout=5, check=True)
+    acquired = subprocess.run(command, capture_output=True, text=True, timeout=5, check=True)
+    assert blocked.stdout.strip() == "busy"
+    assert acquired.stdout.strip() == "acquired"
+
+
 def report(directory):
     return json.loads((directory / "report.json").read_text())
 
